@@ -1,46 +1,20 @@
 using Pulumi;
 using Pulumi.AzureNative.ContainerRegistry;
-using Pulumi.AzureNative.Network;
-using Pulumi.AzureNative.Network.Inputs;
+using Pulumi.AzureNative.ContainerRegistry.Inputs;
 using Pulumi.AzureNative.OperationalInsights;
 using Pulumi.AzureNative.OperationalInsights.Inputs;
 using Pulumi.AzureNative.Resources;
 using Pulumi.AzureNative.Web.V20210301;
 using Pulumi.AzureNative.Web.V20210301.Inputs;
 using Pulumi.Docker;
-
 using ContainerArgs = Pulumi.AzureNative.Web.V20210301.Inputs.ContainerArgs;
-using ContainerRegistrySkuArgs = Pulumi.AzureNative.ContainerRegistry.Inputs.SkuArgs;
 using SecretArgs = Pulumi.AzureNative.Web.V20210301.Inputs.SecretArgs;
-using SubnetArgs = Pulumi.AzureNative.Network.SubnetArgs;
 
-class PrivateEnv : Stack
+class SampleAppStack : Stack
 {
-    public PrivateEnv()
+    public SampleAppStack()
     {
         var resourceGroup = new ResourceGroup("rg");
-
-        var vnet = new VirtualNetwork($"vnet", new VirtualNetworkArgs
-        {
-            ResourceGroupName = resourceGroup.Name,
-            AddressSpace = new AddressSpaceArgs{
-                AddressPrefixes = { "10.0.0.0/16" },
-            }
-        });
-
-        var subnetBackend = new Subnet($"subnet-backend", new SubnetArgs
-                    {
-                        ResourceGroupName = resourceGroup.Name,
-                        AddressPrefix = "10.0.0.0/24",
-                        VirtualNetworkName = vnet.Name,
-                    });
-
-        var subnetCP = new Subnet($"subnet-cp", new SubnetArgs
-                    {
-                        ResourceGroupName = resourceGroup.Name,
-                        AddressPrefix = "10.0.1.0/24",
-                        VirtualNetworkName = vnet.Name,
-                    });
 
         var workspace = new Workspace("loganalytics", new WorkspaceArgs
         {
@@ -68,13 +42,13 @@ class PrivateEnv : Stack
                     CustomerId = workspace.CustomerId,
                     SharedKey = workspaceSharedKeys.Apply(r => r.PrimarySharedKey)
                 }
-            },
+            }
         });
 
         var registry = new Registry("registry", new RegistryArgs
         {
             ResourceGroupName = resourceGroup.Name,
-            Sku = new ContainerRegistrySkuArgs { Name = "Basic" },
+            Sku = new SkuArgs { Name = "Basic" },
             AdminUserEnabled = true
         });
 

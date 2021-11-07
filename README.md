@@ -22,13 +22,17 @@ sign in with Pulumi
 pulumi login
 ```
 
-## test ca-dotnet sample
-
-> sample transferred from <https://github.com/pulumi/examples/tree/master/azure-cs-containerapps>
+## test ca-dotnet Dapr samples
 
 deploy sample
 
 ```shell
+cd app1
+dotnet publish
+cd ..
+cd app2
+dotnet publish
+cd ..
 cd ca-dotnet
 pulumi up
 ```
@@ -36,8 +40,17 @@ pulumi up
 test sample
 
 ```shell
-curl $(pulumi stack output url)
+pulumi stack select dev
+curl $(pulumi stack output urlapp2)/health
+curl $(pulumi stack output urlapp1)/health
+curl -v $(pulumi stack output urlapp1)/healthapp2
 ```
+
+> the first 2 test individual health endpoints, and the 3rd tests service invocation from app1 to app2
+
+## to do
+
+- [ ] [VNET integration](https://github.com/microsoft/azure-container-apps-preview/blob/main/docs/vnet.md)
 
 ## links
 

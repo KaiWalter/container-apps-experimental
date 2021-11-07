@@ -3,5 +3,5 @@ using Pulumi;
 
 class Program
 {
-    static Task<int> Main() => Deployment.RunAsync<DaprEnv>();
+    static Task<int> Main() => Deployment.RunAsync<DaprStack>();
 }
