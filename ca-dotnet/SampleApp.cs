@@ -12,9 +12,9 @@ using Pulumi.Docker;
 using ContainerArgs = Pulumi.AzureNative.Web.V20210301.Inputs.ContainerArgs;
 using SecretArgs = Pulumi.AzureNative.Web.V20210301.Inputs.SecretArgs;
 
-class MyStack : Stack
+class SampleApp : Stack
 {
-    public MyStack()
+    public SampleApp()
     {
         var resourceGroup = new ResourceGroup("rg");
 
