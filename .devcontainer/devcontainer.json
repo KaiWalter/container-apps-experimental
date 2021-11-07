@@ -1,0 +1,38 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the README at:
+// https://github.com/microsoft/vscode-dev-containers/tree/v0.203.0/containers/alpine
+{
+	"name": "C# (.NET)",
+	"build": {
+		"dockerfile": "Dockerfile",
+		"args": {
+			"DOTNET_VARIANT": "3.1",
+			"PULUMI_VERSION": "latest",
+			"INSTALL_NODE": "true",
+			"NODE_VERSION": "lts/*"
+		}
+	},
+	"features": {
+		"azure-cli": "latest",
+		"docker-in-docker": {
+			"version": "latest",
+			"moby": true
+		}
+	},
+	// Set *default* container specific settings.json values on container create.
+	"settings": {},
+	// Add the IDs of extensions you want installed when the container is created.
+	"extensions": [
+		"ms-dotnettools.csharp"
+	],
+	// Use 'forwardPorts' to make a list of ports inside the container available locally.
+	// "forwardPorts": [],
+	// Use 'postCreateCommand' to run commands after the container is created.
+	// "postCreateCommand": "uname -a",
+	// Replace when using a ptrace-based debugger like C++, Go, and Rust
+	// "runArgs": [ "--init", "--cap-add=SYS_PTRACE", "--security-opt", "seccomp=unconfined" ],
+	"runArgs": [
+		"--init"
+	],
+	// Comment out connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
+	"remoteUser": "vscode"
+}
