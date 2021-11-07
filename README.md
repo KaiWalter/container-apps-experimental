@@ -41,5 +41,6 @@ curl $(pulumi stack output url)
 
 ## links
 
+- [Container Apps Quickstart](https://github.com/microsoft/azure-container-apps-preview/blob/main/docs/quickstart.md#quickstart-deploy-a-simple-http-application)
 - [VSCode devcontainer setup](https://stackoverflow.com/questions/69870435/how-do-i-add-pulumi-to-my-vscode-net-devcontainer)
 - [other vscode-dev-containers features](https://github.com/microsoft/vscode-dev-containers/tree/main/script-library/docs)
