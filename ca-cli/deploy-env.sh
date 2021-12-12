@@ -15,7 +15,6 @@ export SUBNET_ID=`az network vnet subnet show --vnet-name ca-vnet \
   --n default \
   --query id -o tsv`
 
-
 az monitor log-analytics workspace create -g $RESOURCE_GROUP_NAME -n $LOG_ANALYTICS_WORKSPACE_NAME
 export LOG_ANALYTICS_WORKSPACE_CLIENT_ID=`az monitor log-analytics workspace show --query customerId -g $RESOURCE_GROUP_NAME -n $LOG_ANALYTICS_WORKSPACE_NAME --out json | tr -d '"'`
 export LOG_ANALYTICS_WORKSPACE_CLIENT_SECRET=`az monitor log-analytics workspace get-shared-keys --query primarySharedKey -g $RESOURCE_GROUP_NAME -n $LOG_ANALYTICS_WORKSPACE_NAME --out json | tr -d '"'`
