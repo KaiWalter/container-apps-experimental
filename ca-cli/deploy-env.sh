@@ -1,3 +1,5 @@
+#!/bin/bash
+
 export RESOURCE_GROUP_NAME="ca-with-cli" # All the resources would be deployed in this resource group
 export RESOURCE_GROUP_LOCATION="northeurope" # The resource group would be created in this location
 export LOG_ANALYTICS_WORKSPACE_NAME="containerappslogs" # Workspace to export application logs
@@ -26,3 +28,4 @@ az containerapp env create -n $CONTAINERAPPS_ENVIRONMENT_NAME \
     --location $RESOURCE_GROUP_LOCATION \
     --subnet-resource-id $SUBNET_ID \
     --debug
+
