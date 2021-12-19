@@ -6,9 +6,12 @@ using Pulumi.AzureNative.OperationalInsights.Inputs;
 using Pulumi.AzureNative.Resources;
 using Pulumi.AzureNative.Web.V20210301;
 using Pulumi.AzureNative.Web.V20210301.Inputs;
+using Pulumi.AzureNative.ServiceBus;
+using Pulumi.AzureNative.ServiceBus.Inputs;
 using Pulumi.Docker;
 using ContainerArgs = Pulumi.AzureNative.Web.V20210301.Inputs.ContainerArgs;
 using SecretArgs = Pulumi.AzureNative.Web.V20210301.Inputs.SecretArgs;
+using SkuName = Pulumi.AzureNative.ServiceBus.SkuName;
 
 class FunctionAppStack : Stack
 {
@@ -61,11 +64,48 @@ class FunctionAppStack : Stack
         var adminUsername = credentials.Apply(credentials => credentials.Username);
         var adminPassword = credentials.Apply(credentials => credentials.Passwords[0].Value);
 
-        var fapp1Name = "fapp1";
-        var fapp1Image = new Image(fapp1Name, new ImageArgs
+        var sb = new Namespace("sb", new NamespaceArgs
         {
-            ImageName = Output.Format($"{registry.LoginServer}/{fapp1Name}:v1.0.0"),
-            Build = new DockerBuild { Context = $"../{fapp1Name}" },
+            ResourceGroupName = resourceGroup.Name,
+            Sku = new SBSkuArgs
+            {
+                Name = SkuName.Basic,
+                Tier = SkuTier.Basic,
+            }
+        });
+
+        ContainerApp containerApp1 = FunctionContainerApp(
+            resourceGroup,
+            kubeEnv, registry,
+            adminUsername,
+            adminPassword,
+            "fapp1",
+            sb);
+        ContainerApp containerApp2 = FunctionContainerApp(
+            resourceGroup,
+            kubeEnv, registry,
+            adminUsername,
+            adminPassword,
+            "fapp2",
+            sb);
+
+        this.UrlApp1 = Output.Format($"https://{containerApp1.Configuration.Apply(c => c.Ingress).Apply(i => i.Fqdn)}");
+        this.UrlApp2 = Output.Format($"https://{containerApp2.Configuration.Apply(c => c.Ingress).Apply(i => i.Fqdn)}");
+    }
+
+    private static ContainerApp FunctionContainerApp(
+        ResourceGroup resourceGroup,
+        KubeEnvironment kubeEnv,
+        Registry registry,
+        Output<string> adminUsername,
+        Output<string> adminPassword,
+        string fappName,
+        Namespace sb)
+    {
+        var fapp1Image = new Image(fappName, new ImageArgs
+        {
+            ImageName = Output.Format($"{registry.LoginServer}/{fappName}:v1.0.0"),
+            Build = new DockerBuild { Context = $"../{fappName}" },
             Registry = new ImageRegistry
             {
                 Server = registry.LoginServer,
@@ -74,7 +114,7 @@ class FunctionAppStack : Stack
             }
         });
 
-        var containerApp = new ContainerApp(fapp1Name, new ContainerAppArgs
+        var containerApp = new ContainerApp(fappName, new ContainerAppArgs
         {
             ResourceGroupName = resourceGroup.Name,
             KubeEnvironmentId = kubeEnv.Id,
@@ -100,6 +140,11 @@ class FunctionAppStack : Stack
                     {
                         Name = "pwd",
                         Value = adminPassword
+                    },
+                    new SecretArgs
+                    {
+                        Name = "servicebusconnection",
+                        Value = GetServiceBusConnectionString(resourceGroup.Name, sb.Name)
                     }
                 },
             },
@@ -109,8 +154,20 @@ class FunctionAppStack : Stack
                 {
                     new ContainerArgs
                     {
-                        Name = fapp1Name,
+                        Name = fappName,
                         Image = fapp1Image.ImageName,
+                        Env = {
+                            new EnvironmentVarArgs
+                            {
+                                Name = "queuename",
+                                Value = "queue1"
+                            },
+                            new EnvironmentVarArgs
+                            {
+                                Name = "servicebusconnection",
+                                SecretRef = "servicebusconnection"
+                            }
+                        }
                     }
                 },
                 Scale = new ScaleArgs
@@ -120,10 +177,32 @@ class FunctionAppStack : Stack
                 },
             }
         });
-
-        this.Url = Output.Format($"https://{containerApp.Configuration.Apply(c => c.Ingress).Apply(i => i.Fqdn)}");
+        return containerApp;
     }
 
-    [Output("url")]
-    public Output<string> Url { get; set; }
+    private static Output<string> GetServiceBusConnectionString(Input<string> resourceGroupName, Input<string> namespaceName)
+    {
+        var sbKeys = Output.All<string>(resourceGroupName, namespaceName).Apply(t =>
+        {
+            var resourceGroupName = t[0];
+            var namespaceName = t[1];
+            return ListNamespaceKeys.InvokeAsync(
+                new ListNamespaceKeysArgs
+                {
+                    ResourceGroupName = resourceGroupName,
+                    AuthorizationRuleName = "RootManageSharedAccessKey",
+                    NamespaceName = namespaceName
+                });
+        });
+        return sbKeys.Apply(keys =>
+        {
+            return Output.Create<string>(keys.PrimaryConnectionString);
+        });
+    }
+
+    [Output("urlapp1")]
+    public Output<string> UrlApp1 { get; set; }
+
+    [Output("urlapp2")]
+    public Output<string> UrlApp2 { get; set; }
 }
