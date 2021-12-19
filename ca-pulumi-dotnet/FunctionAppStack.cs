@@ -1,14 +1,17 @@
 using Pulumi;
 using Pulumi.AzureNative.ContainerRegistry;
 using Pulumi.AzureNative.ContainerRegistry.Inputs;
+using Pulumi.AzureNative.Insights;
 using Pulumi.AzureNative.OperationalInsights;
 using Pulumi.AzureNative.OperationalInsights.Inputs;
 using Pulumi.AzureNative.Resources;
-using Pulumi.AzureNative.Web.V20210301;
-using Pulumi.AzureNative.Web.V20210301.Inputs;
 using Pulumi.AzureNative.ServiceBus;
 using Pulumi.AzureNative.ServiceBus.Inputs;
+using Pulumi.AzureNative.Web.V20210301;
+using Pulumi.AzureNative.Web.V20210301.Inputs;
 using Pulumi.Docker;
+using System;
+
 using ContainerArgs = Pulumi.AzureNative.Web.V20210301.Inputs.ContainerArgs;
 using SecretArgs = Pulumi.AzureNative.Web.V20210301.Inputs.SecretArgs;
 using SkuName = Pulumi.AzureNative.ServiceBus.SkuName;
@@ -32,6 +35,13 @@ class FunctionAppStack : Stack
                 ResourceGroupName = items.Item1,
                 WorkspaceName = items.Item2,
             }));
+
+        var appInsights = new Component("appInsights", new ComponentArgs
+        {
+            ApplicationType = "web",
+            Kind = "web",
+            ResourceGroupName = resourceGroup.Name,
+        });
 
         var kubeEnv = new KubeEnvironment("env", new KubeEnvironmentArgs
         {
@@ -71,40 +81,56 @@ class FunctionAppStack : Stack
             {
                 Name = SkuName.Basic,
                 Tier = SkuTier.Basic,
-            }
+            },
+        });
+
+        var sbQueue = new Queue("queue1", new QueueArgs
+        {
+            ResourceGroupName = resourceGroup.Name,
+            NamespaceName = sb.Name,
+            MaxSizeInMegabytes = 1024,
         });
 
         ContainerApp containerApp1 = FunctionContainerApp(
-            resourceGroup,
-            kubeEnv, registry,
-            adminUsername,
-            adminPassword,
             "fapp1",
-            sb);
-        ContainerApp containerApp2 = FunctionContainerApp(
             resourceGroup,
-            kubeEnv, registry,
+            kubeEnv, 
+            registry,
             adminUsername,
             adminPassword,
+            appInsights,
+            sb,
+            sbQueue);
+
+        ContainerApp containerApp2 = FunctionContainerApp(
             "fapp2",
-            sb);
+            resourceGroup,
+            kubeEnv,
+            registry,
+            adminUsername,
+            adminPassword,
+            appInsights,
+            sb,
+            sbQueue);
 
         this.UrlApp1 = Output.Format($"https://{containerApp1.Configuration.Apply(c => c.Ingress).Apply(i => i.Fqdn)}");
         this.UrlApp2 = Output.Format($"https://{containerApp2.Configuration.Apply(c => c.Ingress).Apply(i => i.Fqdn)}");
     }
 
     private static ContainerApp FunctionContainerApp(
+        string fappName,
         ResourceGroup resourceGroup,
         KubeEnvironment kubeEnv,
         Registry registry,
         Output<string> adminUsername,
         Output<string> adminPassword,
-        string fappName,
-        Namespace sb)
+        Component appInsights,
+        Namespace sb,
+        Queue sbQueue)
     {
         var fapp1Image = new Image(fappName, new ImageArgs
         {
-            ImageName = Output.Format($"{registry.LoginServer}/{fappName}:v1.0.0"),
+            ImageName = Output.Format($"{registry.LoginServer}/{fappName}:{DateTime.UtcNow.ToString("yyyyMMddhhmmss")}"),
             Build = new DockerBuild { Context = $"../{fappName}" },
             Registry = new ImageRegistry
             {
@@ -120,6 +146,7 @@ class FunctionAppStack : Stack
             KubeEnvironmentId = kubeEnv.Id,
             Configuration = new ConfigurationArgs
             {
+                ActiveRevisionsMode = ActiveRevisionsMode.Single,
                 Ingress = new IngressArgs
                 {
                     External = true,
@@ -159,13 +186,18 @@ class FunctionAppStack : Stack
                         Env = {
                             new EnvironmentVarArgs
                             {
+                                Name = "APPINSIGHTS_INSTRUMENTATIONKEY",
+                                Value = appInsights.InstrumentationKey,
+                            },
+                            new EnvironmentVarArgs
+                            {
                                 Name = "queuename",
-                                Value = "queue1"
+                                Value = sbQueue.Name,
                             },
                             new EnvironmentVarArgs
                             {
                                 Name = "servicebusconnection",
-                                SecretRef = "servicebusconnection"
+                                SecretRef = "servicebusconnection",
                             }
                         }
                     }

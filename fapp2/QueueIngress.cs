@@ -1,6 +1,4 @@
-using System;
 using Microsoft.Azure.WebJobs;
-using Microsoft.Azure.WebJobs.Host;
 using Microsoft.Extensions.Logging;
 
 namespace fapp2
@@ -8,9 +6,10 @@ namespace fapp2
     public static class QueueIngress
     {
         [FunctionName("QueueIngress")]
-        public static void Run([ServiceBusTrigger("%queuename%", Connection = "%servicebusconnection%")]string myQueueItem, ILogger log)
+        public static void Run(
+            [ServiceBusTrigger("%queuename%", Connection = "servicebusconnection")]string payload, ILogger log)
         {
-            log.LogInformation($"C# ServiceBus queue trigger function processed message: {myQueueItem}");
+            log.LogInformation($"C# ServiceBus queue trigger function processed message: {payload}");
         }
     }
 }
