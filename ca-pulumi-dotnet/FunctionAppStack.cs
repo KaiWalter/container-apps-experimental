@@ -1,4 +1,5 @@
 using Pulumi;
+using Pulumi.AzureNative;
 using Pulumi.AzureNative.ContainerRegistry;
 using Pulumi.AzureNative.ContainerRegistry.Inputs;
 using Pulumi.AzureNative.Insights;
@@ -9,6 +10,8 @@ using Pulumi.AzureNative.ServiceBus;
 using Pulumi.AzureNative.ServiceBus.Inputs;
 using Pulumi.AzureNative.Web.V20210301;
 using Pulumi.AzureNative.Web.V20210301.Inputs;
+using Pulumi.AzureNative.LoadTestService;
+using Pulumi.AzureNative.LoadTestService.Inputs;
 using Pulumi.Docker;
 using System;
 
@@ -94,7 +97,7 @@ class FunctionAppStack : Stack
         ContainerApp containerApp1 = FunctionContainerApp(
             "fapp1",
             resourceGroup,
-            kubeEnv, 
+            kubeEnv,
             registry,
             adminUsername,
             adminPassword,
@@ -111,10 +114,23 @@ class FunctionAppStack : Stack
             adminPassword,
             appInsights,
             sb,
-            sbQueue);
+            sbQueue,
+            scaleToQueue: true);
 
-        this.UrlApp1 = Output.Format($"https://{containerApp1.Configuration.Apply(c => c.Ingress).Apply(i => i.Fqdn)}");
+        this.UrlApp1 = Output.Format($"for i in {{1..500}}; do echo $i; curl -X POST -d 'TEST' https://{containerApp1.Configuration.Apply(c => c.Ingress).Apply(i => i.Fqdn)}/api/httpingress; done");
         this.UrlApp2 = Output.Format($"https://{containerApp2.Configuration.Apply(c => c.Ingress).Apply(i => i.Fqdn)}");
+
+        // load test service
+        // still IAM... needs to be set : https://docs.microsoft.com/en-us/azure/load-testing/quickstart-create-and-run-load-test
+        var loadtest = new LoadTest("loadtest", new LoadTestArgs
+        {
+            ResourceGroupName = resourceGroup.Name,
+            Description = "Load testing for Container Apps scaling",
+            Identity = new SystemAssignedServiceIdentityArgs
+            {
+                Type = SystemAssignedServiceIdentityType.SystemAssigned,
+            },
+        });
     }
 
     private static ContainerApp FunctionContainerApp(
@@ -126,7 +142,8 @@ class FunctionAppStack : Stack
         Output<string> adminPassword,
         Component appInsights,
         Namespace sb,
-        Queue sbQueue)
+        Queue sbQueue,
+        bool scaleToQueue = false)
     {
         var fapp1Image = new Image(fappName, new ImageArgs
         {
@@ -202,10 +219,47 @@ class FunctionAppStack : Stack
                         }
                     }
                 },
-                Scale = new ScaleArgs
+                Scale = scaleToQueue
+                ? new ScaleArgs // Azure Service Bus Queue scaling
                 {
-                    MaxReplicas = 3,
                     MinReplicas = 1,
+                    MaxReplicas = 10,
+                    Rules = {
+                        new ScaleRuleArgs
+                        {
+                            Name = "queue-rule",
+                            AzureQueue = new QueueScaleRuleArgs
+                            {
+                                QueueName = sbQueue.Name,
+                                QueueLength = 100,
+                                Auth = {
+                                    new ScaleRuleAuthArgs
+                                    {
+                                        TriggerParameter = "connection",
+                                        SecretRef = "servicebusconnection"
+                                    }
+                                },
+                            }
+                        }
+                    }
+                }
+                : new ScaleArgs // HTTP scaling
+                {
+                    MinReplicas = 1,
+                    MaxReplicas = 10,
+                    Rules = {
+                        new ScaleRuleArgs
+                        {
+                            Name = "http-rule",
+                            Http = new HttpScaleRuleArgs
+                            {
+                                Metadata = new InputMap<string>
+                                {
+                                    {"concurrentRequests", "100"}
+                                }
+                            }
+                        }
+                    }
                 },
             }
         });
