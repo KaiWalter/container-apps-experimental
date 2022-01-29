@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"path": "fapp1"
+		},
+		{
+			"path": "fapp2"
+		}
+	],
+	"settings": {
+		"debug.internalConsoleOptions": "neverOpen"
+	}
+}

@@ -16,6 +16,11 @@ switch to the desired subscription
 az account set -s "{subscription-name-or-id}"
 ```
 
+[re-register Microsoft.Web](https://github.com/microsoft/azure-container-apps/wiki/Known-Issues-for-public-preview)
+
+```shell
+az provider register --namespace Microsoft.Web
+
 sign in with Pulumi
 
 ```shell
@@ -47,6 +52,10 @@ curl -v $(pulumi stack output urlapp1)/healthapp2
 ```
 
 > the first 2 test individual health endpoints, and the 3rd tests service invocation from app1 to app2
+
+## test Function scaling
+
+pulumi config set azure-native:location northeurope
 
 ## to do
 

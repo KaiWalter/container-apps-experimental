@@ -59,7 +59,7 @@ class PrivateNetworkStack : Stack
         var kubeEnv = new KubeEnvironment("env", new KubeEnvironmentArgs
         {
             ResourceGroupName = resourceGroup.Name,
-            Type = "Managed",
+            EnvironmentType = "Managed",
             AppLogsConfiguration = new AppLogsConfigurationArgs
             {
                 Destination = "log-analytics",

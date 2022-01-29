@@ -23,7 +23,11 @@ class FunctionAppStack : Stack
 {
     public FunctionAppStack()
     {
-        var resourceGroup = new ResourceGroup("rg");
+        var resourceGroup = new ResourceGroup("rg", new ResourceGroupArgs
+        {
+            Location = "northeurope",
+            ResourceGroupName = "ca-kw",
+        });
 
         var workspace = new Workspace("loganalytics", new WorkspaceArgs
         {
@@ -49,7 +53,7 @@ class FunctionAppStack : Stack
         var kubeEnv = new KubeEnvironment("env", new KubeEnvironmentArgs
         {
             ResourceGroupName = resourceGroup.Name,
-            Type = "Managed",
+            EnvironmentType = "Managed",
             AppLogsConfiguration = new AppLogsConfigurationArgs
             {
                 Destination = "log-analytics",
@@ -228,10 +232,14 @@ class FunctionAppStack : Stack
                         new ScaleRuleArgs
                         {
                             Name = "queue-rule",
-                            AzureQueue = new QueueScaleRuleArgs
+                            Custom = new CustomScaleRuleArgs
                             {
-                                QueueName = sbQueue.Name,
-                                QueueLength = 100,
+                                Type = "azure-servicebus",
+                                Metadata = new InputMap<string>
+                                {
+                                    { "queueName", sbQueue.Name },
+                                    { "messageCount", "100" }
+                                },
                                 Auth = {
                                     new ScaleRuleAuthArgs
                                     {
@@ -239,7 +247,7 @@ class FunctionAppStack : Stack
                                         SecretRef = "servicebusconnection"
                                     }
                                 },
-                            }
+                            },
                         }
                     }
                 }
