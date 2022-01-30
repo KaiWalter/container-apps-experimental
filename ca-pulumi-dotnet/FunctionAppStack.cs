@@ -1,5 +1,5 @@
 using Pulumi;
-using Pulumi.AzureNative;
+using Pulumi.AzureNative.Authorization;
 using Pulumi.AzureNative.ContainerRegistry;
 using Pulumi.AzureNative.ContainerRegistry.Inputs;
 using Pulumi.AzureNative.Insights;
@@ -23,6 +23,8 @@ class FunctionAppStack : Stack
 {
     public FunctionAppStack()
     {
+        var config = GetClientConfig.InvokeAsync().Result;
+
         var resourceGroup = new ResourceGroup("rg", new ResourceGroupArgs
         {
             Location = "northeurope",
@@ -121,11 +123,11 @@ class FunctionAppStack : Stack
             sbQueue,
             scaleToQueue: true);
 
-        this.UrlApp1 = Output.Format($"for i in {{1..500}}; do echo $i; curl -X POST -d 'TEST' https://{containerApp1.Configuration.Apply(c => c.Ingress).Apply(i => i.Fqdn)}/api/httpingress; done");
-        this.UrlApp2 = Output.Format($"https://{containerApp2.Configuration.Apply(c => c.Ingress).Apply(i => i.Fqdn)}");
+        this.LoadtestFApp1 = Output.Format($"for i in {{1..500}}; do echo $i; curl -X POST -d 'TEST' https://{containerApp1.Configuration.Apply(c => c.Ingress).Apply(i => i.Fqdn)}/api/httpingress; done");
+        this.UrlFApp1 = Output.Format($"{containerApp1.Configuration.Apply(c => c!.Ingress).Apply(i => i!.Fqdn)}");
+        this.UrlFApp2 = Output.Format($"{containerApp2.Configuration.Apply(c => c!.Ingress).Apply(i => i!.Fqdn)}");
 
         // load test service
-        // still IAM... needs to be set : https://docs.microsoft.com/en-us/azure/load-testing/quickstart-create-and-run-load-test
         var loadtest = new LoadTest("loadtest", new LoadTestArgs
         {
             ResourceGroupName = resourceGroup.Name,
@@ -134,6 +136,21 @@ class FunctionAppStack : Stack
             {
                 Type = SystemAssignedServiceIdentityType.SystemAssigned,
             },
+        });
+
+        // authorize load test owner to user executing deployment
+        var rd = GetRoleDefinition.InvokeAsync(new GetRoleDefinitionArgs
+        {
+            RoleDefinitionId = "45bb0b16-2f0c-4e78-afaa-a07599b003f6", // Load Test Owner
+            Scope = $"/subscriptions/{config.SubscriptionId}",
+        }).Result;
+
+        var iam = new RoleAssignment("iam-loadtest", new RoleAssignmentArgs
+        {
+            RoleDefinitionId = rd.Id,
+            Scope = resourceGroup.Id,
+            PrincipalType = "User",
+            PrincipalId = config.ObjectId,
         });
     }
 
@@ -294,9 +311,12 @@ class FunctionAppStack : Stack
         });
     }
 
-    [Output("urlapp1")]
-    public Output<string> UrlApp1 { get; set; }
+    [Output("loadtestfapp1")]
+    public Output<string> LoadtestFApp1 { get; set; }
 
-    [Output("urlapp2")]
-    public Output<string> UrlApp2 { get; set; }
+    [Output("urlfapp1")]
+    public Output<string> UrlFApp1 { get; set; }
+
+    [Output("urlfapp2")]
+    public Output<string> UrlFApp2 { get; set; }
 }
