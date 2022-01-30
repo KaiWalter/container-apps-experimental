@@ -20,6 +20,7 @@ az account set -s "{subscription-name-or-id}"
 
 ```shell
 az provider register --namespace Microsoft.Web
+```
 
 sign in with Pulumi
 
@@ -55,7 +56,13 @@ curl -v $(pulumi stack output urlapp1)/healthapp2
 
 ## test Function scaling
 
-pulumi config set azure-native:location northeurope
+change `ca-pulumi-dotnet/Program.cs` to `FunctionAppStack.cs`.
+
+```shell
+cd ca-pulumi-dotnet
+pulumi stack init dev
+pulumi up
+```
 
 ## to do
 
