@@ -8,6 +8,7 @@ using Pulumi.AzureNative.OperationalInsights.Inputs;
 using Pulumi.AzureNative.Resources;
 using Pulumi.AzureNative.ServiceBus;
 using Pulumi.AzureNative.ServiceBus.Inputs;
+using Pulumi.AzureNative.Storage;
 using Pulumi.AzureNative.Web.V20210301;
 using Pulumi.AzureNative.Web.V20210301.Inputs;
 using Pulumi.AzureNative.LoadTestService;
@@ -18,10 +19,13 @@ using System;
 using ContainerArgs = Pulumi.AzureNative.Web.V20210301.Inputs.ContainerArgs;
 using SecretArgs = Pulumi.AzureNative.Web.V20210301.Inputs.SecretArgs;
 using SkuName = Pulumi.AzureNative.ServiceBus.SkuName;
+using StorageAccountArgs = Pulumi.AzureNative.Storage.StorageAccountArgs;
+using Queue = Pulumi.AzureNative.ServiceBus.Queue;
+using QueueArgs = Pulumi.AzureNative.ServiceBus.QueueArgs;
 
-class FunctionAppStack : Stack
+class MaximumStack : Stack
 {
-    public FunctionAppStack()
+    public MaximumStack()
     {
         var config = GetClientConfig.InvokeAsync().Result;
 
@@ -29,6 +33,23 @@ class FunctionAppStack : Stack
         {
             Location = "northeurope",
             ResourceGroupName = "ca-kw",
+        });
+
+        var storageAccount = new StorageAccount("sa", new StorageAccountArgs
+        {
+            ResourceGroupName = resourceGroup.Name,
+            Sku = new Pulumi.AzureNative.Storage.Inputs.SkuArgs
+            {
+                Name = Pulumi.AzureNative.Storage.SkuName.Standard_LRS,
+            },
+            Kind = Pulumi.AzureNative.Storage.Kind.StorageV2,
+        });
+
+        var blobContainer = new BlobContainer("blobContainer", new BlobContainerArgs
+        {
+            AccountName = storageAccount.Name,
+            ResourceGroupName = resourceGroup.Name,
+            ContainerName = "state",
         });
 
         var workspace = new Workspace("loganalytics", new WorkspaceArgs
@@ -100,7 +121,7 @@ class FunctionAppStack : Stack
             MaxSizeInMegabytes = 1024,
         });
 
-        ContainerApp containerApp1 = FunctionContainerApp(
+        ContainerApp functionApp1 = FunctionContainerApp(
             "fapp1",
             resourceGroup,
             kubeEnv,
@@ -111,7 +132,7 @@ class FunctionAppStack : Stack
             sb,
             sbQueue);
 
-        ContainerApp containerApp2 = FunctionContainerApp(
+        ContainerApp functionApp2 = FunctionContainerApp(
             "fapp2",
             resourceGroup,
             kubeEnv,
@@ -123,9 +144,39 @@ class FunctionAppStack : Stack
             sbQueue,
             scaleToQueue: true);
 
-        this.LoadtestFApp1 = Output.Format($"for i in {{1..500}}; do echo $i; curl -X POST -d 'TEST' https://{containerApp1.Configuration.Apply(c => c.Ingress).Apply(i => i.Fqdn)}/api/httpingress; done");
-        this.UrlFApp1 = Output.Format($"{containerApp1.Configuration.Apply(c => c!.Ingress).Apply(i => i!.Fqdn)}");
-        this.UrlFApp2 = Output.Format($"{containerApp2.Configuration.Apply(c => c!.Ingress).Apply(i => i!.Fqdn)}");
+        // generate outputs for testing Function apps
+        this.LoadtestFApp1 = Output.Format($"for i in {{1..500}}; do echo $i; curl -X POST -d 'TEST' https://{functionApp1.Configuration.Apply(c => c.Ingress).Apply(i => i.Fqdn)}/api/httpingress; done");
+        this.UrlFApp1 = Output.Format($"{functionApp1.Configuration.Apply(c => c!.Ingress).Apply(i => i!.Fqdn)}");
+        this.UrlFApp2 = Output.Format($"{functionApp2.Configuration.Apply(c => c!.Ingress).Apply(i => i!.Fqdn)}");
+
+        // Dapr ASP.NET Core apps
+        ContainerApp daprApp1 = DaprContainerApp(
+            "app1",
+            resourceGroup,
+            kubeEnv,
+            registry,
+            adminUsername,
+            adminPassword,
+            appInsights,
+            storageAccount,
+            blobContainer);
+
+        ContainerApp daprApp2 = DaprContainerApp(
+            "app2",
+            resourceGroup,
+            kubeEnv,
+            registry,
+            adminUsername,
+            adminPassword,
+            appInsights,
+            storageAccount,
+            blobContainer);
+
+        // generate outputs for testing Dapr apps
+        this.CheckApp1 = Output.Format($"https://{daprApp1.Configuration.Apply(c => c!.Ingress).Apply(i => i!.Fqdn)}/health");
+        this.CheckApp2 = Output.Format($"https://{daprApp2.Configuration.Apply(c => c!.Ingress).Apply(i => i!.Fqdn)}/health");
+        this.CheckApp1FromApp2 = Output.Format($"https://{daprApp2.Configuration.Apply(c => c!.Ingress).Apply(i => i!.Fqdn)}/health-remote");
+        this.CheckApp2FromApp1 = Output.Format($"https://{daprApp1.Configuration.Apply(c => c!.Ingress).Apply(i => i!.Fqdn)}/health-remote");
 
         // load test service
         var loadtest = new LoadTest("loadtest", new LoadTestArgs
@@ -166,7 +217,7 @@ class FunctionAppStack : Stack
         Queue sbQueue,
         bool scaleToQueue = false)
     {
-        var fappImage = new Image(fappName, new ImageArgs
+        var fapp1Image = new Image(fappName, new ImageArgs
         {
             ImageName = Output.Format($"{registry.LoginServer}/{fappName}:{DateTime.UtcNow.ToString("yyyyMMddhhmmss")}"),
             Build = new DockerBuild { Context = $"../{fappName}" },
@@ -220,7 +271,7 @@ class FunctionAppStack : Stack
                     new ContainerArgs
                     {
                         Name = fappName,
-                        Image = fappImage.ImageName,
+                        Image = fapp1Image.ImageName,
                         Env = {
                             new EnvironmentVarArgs
                             {
@@ -291,6 +342,130 @@ class FunctionAppStack : Stack
         return containerApp;
     }
 
+    private static ContainerApp DaprContainerApp(
+        string appName,
+        ResourceGroup resourceGroup,
+        KubeEnvironment kubeEnv,
+        Registry registry,
+        Output<string> adminUsername,
+        Output<string> adminPassword,
+        Component appInsights,
+        StorageAccount storageAccount,
+        BlobContainer blobContainer)
+    {
+        var appImage = new Image(appName, new ImageArgs
+        {
+            ImageName = Output.Format($"{registry.LoginServer}/{appName}:{DateTime.UtcNow.ToString("yyyyMMddhhmmss")}"),
+            Build = new DockerBuild { Context = $"../{appName}" },
+            Registry = new ImageRegistry
+            {
+                Server = registry.LoginServer,
+                Username = adminUsername,
+                Password = adminPassword
+            }
+        });
+
+        var containerApp = new ContainerApp(appName, new ContainerAppArgs
+        {
+            ResourceGroupName = resourceGroup.Name,
+            KubeEnvironmentId = kubeEnv.Id,
+            Configuration = DaprContainerConfiguration(resourceGroup, storageAccount, registry, adminUsername, adminPassword),
+            Template = new TemplateArgs
+            {
+                Containers =
+                {
+                    new ContainerArgs
+                    {
+                        Name = appName,
+                        Image = appImage.ImageName,
+                        Resources = new ContainerResourcesArgs
+                        {
+                            Memory = "1Gi",
+                            Cpu = 0.5,
+                        },
+                    }
+                },
+                Scale = new ScaleArgs
+                {
+                    MaxReplicas = 1,
+                    MinReplicas = 1,
+                },
+                Dapr = new DaprArgs
+                {
+                    Enabled = true,
+                    AppId = appName,
+                    AppPort = 80,
+                    Components =
+                    {
+                        DaprStateComponent(storageAccount, blobContainer),
+                    },
+                },
+            },
+        });
+        return containerApp;
+    }
+
+    private static ConfigurationArgs DaprContainerConfiguration(ResourceGroup resourceGroup, StorageAccount storageAccount, Registry registry, Output<string> adminUsername, Output<string> adminPassword)
+    {
+        return new ConfigurationArgs
+        {
+            Ingress = new IngressArgs
+            {
+                External = true,
+                TargetPort = 80
+            },
+            Registries =
+                {
+                    new RegistryCredentialsArgs
+                    {
+                        Server = registry.LoginServer,
+                        Username = adminUsername,
+                        PasswordSecretRef = "pwd",
+                    }
+                },
+            Secrets =
+                {
+                    new SecretArgs
+                    {
+                        Name = "storage-key",
+                        Value = GetStorageKey(resourceGroup.Name, storageAccount.Name)
+                    },
+                    new SecretArgs
+                    {
+                        Name = "pwd",
+                        Value = adminPassword
+                    },
+                },
+        };
+    }
+
+    private static DaprComponentArgs DaprStateComponent(StorageAccount storageAccount, BlobContainer blobContainer)
+        => new DaprComponentArgs
+        {
+            Name = "statestore",
+            Type = "state.azure.blobstorage",
+            Version = "v1",
+            Metadata =
+                            {
+                                new DaprMetadataArgs
+                                {
+                                    Name = "accountName",
+                                    Value = storageAccount.Name,
+                                },
+                                new DaprMetadataArgs
+                                {
+                                    Name = "accountKey",
+                                    SecretRef = "storage-key",
+                                },
+                                new DaprMetadataArgs
+                                {
+                                    Name = "containerName",
+                                    Value = blobContainer.Name,
+                                },
+                            }
+        };
+
+
     private static Output<string> GetServiceBusConnectionString(Input<string> resourceGroupName, Input<string> namespaceName)
     {
         var sbKeys = Output.All<string>(resourceGroupName, namespaceName).Apply(t =>
@@ -311,6 +486,29 @@ class FunctionAppStack : Stack
         });
     }
 
+    private static Output<string> GetStorageKey(Input<string> resourceGroupName, Input<string> accountName)
+    {
+        // Retrieve the primary storage account key.
+        var storageAccountKeys = Output.All<string>(resourceGroupName, accountName).Apply(t =>
+        {
+            var resourceGroupName = t[0];
+            var accountName = t[1];
+            return ListStorageAccountKeys.InvokeAsync(
+                new ListStorageAccountKeysArgs
+                {
+                    ResourceGroupName = resourceGroupName,
+                    AccountName = accountName
+                });
+        });
+        return storageAccountKeys.Apply(keys =>
+        {
+            var primaryStorageKey = keys.Keys[0].Value;
+
+            // Build the connection string to the storage account.
+            return Output.Create<string>(primaryStorageKey);
+        });
+    }
+
     [Output("loadtestfapp1")]
     public Output<string> LoadtestFApp1 { get; set; }
 
@@ -319,4 +517,15 @@ class FunctionAppStack : Stack
 
     [Output("urlfapp2")]
     public Output<string> UrlFApp2 { get; set; }
+
+    [Output("checkapp1")]
+    public Output<string> CheckApp1 { get; set; }
+
+    [Output("checkapp2")]
+    public Output<string> CheckApp2 { get; set; }
+    [Output("checkapp1fromapp2")]
+    public Output<string> CheckApp1FromApp2 { get; set; }
+
+    [Output("checkapp2fromapp1")]
+    public Output<string> CheckApp2FromApp1 { get; set; }
 }
