@@ -1,13 +1,9 @@
 using Pulumi;
 using Pulumi.AzureNative.Authorization;
 using Pulumi.AzureNative.ContainerRegistry;
-using Pulumi.AzureNative.ContainerRegistry.Inputs;
 using Pulumi.AzureNative.Insights;
-using Pulumi.AzureNative.OperationalInsights;
-using Pulumi.AzureNative.OperationalInsights.Inputs;
 using Pulumi.AzureNative.Resources;
 using Pulumi.AzureNative.ServiceBus;
-using Pulumi.AzureNative.ServiceBus.Inputs;
 using Pulumi.AzureNative.Storage;
 using Pulumi.AzureNative.Web.V20210301;
 using Pulumi.AzureNative.Web.V20210301.Inputs;
@@ -18,10 +14,7 @@ using System;
 
 using ContainerArgs = Pulumi.AzureNative.Web.V20210301.Inputs.ContainerArgs;
 using SecretArgs = Pulumi.AzureNative.Web.V20210301.Inputs.SecretArgs;
-using SkuName = Pulumi.AzureNative.ServiceBus.SkuName;
-using StorageAccountArgs = Pulumi.AzureNative.Storage.StorageAccountArgs;
 using Queue = Pulumi.AzureNative.ServiceBus.Queue;
-using QueueArgs = Pulumi.AzureNative.ServiceBus.QueueArgs;
 
 class MaximumStack : Stack
 {
@@ -35,96 +28,20 @@ class MaximumStack : Stack
             ResourceGroupName = "ca-kw",
         });
 
-        var storageAccount = new StorageAccount("sa", new StorageAccountArgs
-        {
-            ResourceGroupName = resourceGroup.Name,
-            Sku = new Pulumi.AzureNative.Storage.Inputs.SkuArgs
-            {
-                Name = Pulumi.AzureNative.Storage.SkuName.Standard_LRS,
-            },
-            Kind = Pulumi.AzureNative.Storage.Kind.StorageV2,
-        });
+        var (storageAccount, blobContainer) = Common.StateStorage(resourceGroup);
 
-        var blobContainer = new BlobContainer("blobContainer", new BlobContainerArgs
-        {
-            AccountName = storageAccount.Name,
-            ResourceGroupName = resourceGroup.Name,
-            ContainerName = "state",
-        });
+        var (workspace, workspaceSharedKeys, appInsights) = Common.LoggingResources(resourceGroup);
 
-        var workspace = new Workspace("loganalytics", new WorkspaceArgs
-        {
-            ResourceGroupName = resourceGroup.Name,
-            Sku = new WorkspaceSkuArgs { Name = "PerGB2018" },
-            RetentionInDays = 30,
-        });
+        var containerAppEnv = Common.ContainerAppEnvironment(resourceGroup, workspace, workspaceSharedKeys);
 
-        var workspaceSharedKeys = Output.Tuple(resourceGroup.Name, workspace.Name).Apply(items =>
-            GetSharedKeys.InvokeAsync(new GetSharedKeysArgs
-            {
-                ResourceGroupName = items.Item1,
-                WorkspaceName = items.Item2,
-            }));
+        var (registry, adminUsername, adminPassword) = Common.ContainerRegistryResources(resourceGroup);
 
-        var appInsights = new Component("appInsights", new ComponentArgs
-        {
-            ApplicationType = "web",
-            Kind = "web",
-            ResourceGroupName = resourceGroup.Name,
-        });
-
-        var kubeEnv = new KubeEnvironment("env", new KubeEnvironmentArgs
-        {
-            ResourceGroupName = resourceGroup.Name,
-            EnvironmentType = "Managed",
-            AppLogsConfiguration = new AppLogsConfigurationArgs
-            {
-                Destination = "log-analytics",
-                LogAnalyticsConfiguration = new LogAnalyticsConfigurationArgs
-                {
-                    CustomerId = workspace.CustomerId,
-                    SharedKey = workspaceSharedKeys.Apply(r => r.PrimarySharedKey)
-                }
-            }
-        });
-
-        var registry = new Registry("registry", new RegistryArgs
-        {
-            ResourceGroupName = resourceGroup.Name,
-            Sku = new SkuArgs { Name = "Basic" },
-            AdminUserEnabled = true
-        });
-
-        var credentials = Output.Tuple(resourceGroup.Name, registry.Name).Apply(items =>
-            ListRegistryCredentials.InvokeAsync(new ListRegistryCredentialsArgs
-            {
-                ResourceGroupName = items.Item1,
-                RegistryName = items.Item2
-            }));
-        var adminUsername = credentials.Apply(credentials => credentials.Username);
-        var adminPassword = credentials.Apply(credentials => credentials.Passwords[0].Value);
-
-        var sb = new Namespace("sb", new NamespaceArgs
-        {
-            ResourceGroupName = resourceGroup.Name,
-            Sku = new SBSkuArgs
-            {
-                Name = SkuName.Basic,
-                Tier = SkuTier.Basic,
-            },
-        });
-
-        var sbQueue = new Queue("queue1", new QueueArgs
-        {
-            ResourceGroupName = resourceGroup.Name,
-            NamespaceName = sb.Name,
-            MaxSizeInMegabytes = 1024,
-        });
+        var (sb, sbQueue) = Common.ServiceBusResources(resourceGroup);
 
         ContainerApp functionApp1 = FunctionContainerApp(
             "fapp1",
             resourceGroup,
-            kubeEnv,
+            containerAppEnv,
             registry,
             adminUsername,
             adminPassword,
@@ -135,7 +52,7 @@ class MaximumStack : Stack
         ContainerApp functionApp2 = FunctionContainerApp(
             "fapp2",
             resourceGroup,
-            kubeEnv,
+            containerAppEnv,
             registry,
             adminUsername,
             adminPassword,
@@ -154,7 +71,7 @@ class MaximumStack : Stack
         ContainerApp daprApp1 = DaprContainerApp(
             "app1",
             resourceGroup,
-            kubeEnv,
+            containerAppEnv,
             registry,
             adminUsername,
             adminPassword,
@@ -165,7 +82,7 @@ class MaximumStack : Stack
         ContainerApp daprApp2 = DaprContainerApp(
             "app2",
             resourceGroup,
-            kubeEnv,
+            containerAppEnv,
             registry,
             adminUsername,
             adminPassword,
@@ -261,7 +178,7 @@ class MaximumStack : Stack
                     new SecretArgs
                     {
                         Name = "servicebusconnection",
-                        Value = GetServiceBusConnectionString(resourceGroup.Name, sb.Name)
+                        Value = Common.GetServiceBusConnectionString(resourceGroup.Name, sb.Name)
                     }
                 },
             },
@@ -429,7 +346,7 @@ class MaximumStack : Stack
                     new SecretArgs
                     {
                         Name = "storage-key",
-                        Value = GetStorageKey(resourceGroup.Name, storageAccount.Name)
+                        Value = Common.GetStorageKey(resourceGroup.Name, storageAccount.Name)
                     },
                     new SecretArgs
                     {
@@ -467,48 +384,7 @@ class MaximumStack : Stack
         };
 
 
-    private static Output<string> GetServiceBusConnectionString(Input<string> resourceGroupName, Input<string> namespaceName)
-    {
-        var sbKeys = Output.All<string>(resourceGroupName, namespaceName).Apply(t =>
-        {
-            var resourceGroupName = t[0];
-            var namespaceName = t[1];
-            return ListNamespaceKeys.InvokeAsync(
-                new ListNamespaceKeysArgs
-                {
-                    ResourceGroupName = resourceGroupName,
-                    AuthorizationRuleName = "RootManageSharedAccessKey",
-                    NamespaceName = namespaceName
-                });
-        });
-        return sbKeys.Apply(keys =>
-        {
-            return Output.Create<string>(keys.PrimaryConnectionString);
-        });
-    }
 
-    private static Output<string> GetStorageKey(Input<string> resourceGroupName, Input<string> accountName)
-    {
-        // Retrieve the primary storage account key.
-        var storageAccountKeys = Output.All<string>(resourceGroupName, accountName).Apply(t =>
-        {
-            var resourceGroupName = t[0];
-            var accountName = t[1];
-            return ListStorageAccountKeys.InvokeAsync(
-                new ListStorageAccountKeysArgs
-                {
-                    ResourceGroupName = resourceGroupName,
-                    AccountName = accountName
-                });
-        });
-        return storageAccountKeys.Apply(keys =>
-        {
-            var primaryStorageKey = keys.Keys[0].Value;
-
-            // Build the connection string to the storage account.
-            return Output.Create<string>(primaryStorageKey);
-        });
-    }
 
     [Output("loadtestfapp1")]
     public Output<string> LoadtestFApp1 { get; set; }

@@ -47,7 +47,7 @@ pulumi up
 - go to load testing resource in Azure Portal
 - create test
 - upload `ca-pulumi-dotnet/loadtest.jmx`
-- in parameters set `ingress_url` to `urlfapp1` output value
+- in parameters set `ingress_url` to `loadtestfapp1` output value
 - **Create** the test
 
 ![create test](images/CreateTest.png)

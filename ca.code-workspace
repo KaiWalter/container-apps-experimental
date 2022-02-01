@@ -5,6 +5,15 @@
 		},
 		{
 			"path": "fapp2"
+		},
+		{
+			"path": "app1"
+		},
+		{
+			"path": "app2"
+		},
+		{
+			"path": "ca-pulumi-dotnet"
 		}
 	],
 	"settings": {

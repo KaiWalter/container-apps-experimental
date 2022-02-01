@@ -1,9 +1,5 @@
 using Pulumi;
 using Pulumi.AzureNative.ContainerRegistry;
-using Pulumi.AzureNative.ContainerRegistry.Inputs;
-using Pulumi.AzureNative.Insights;
-using Pulumi.AzureNative.OperationalInsights;
-using Pulumi.AzureNative.OperationalInsights.Inputs;
 using Pulumi.AzureNative.Resources;
 using Pulumi.AzureNative.Storage;
 using Pulumi.AzureNative.Web.V20210301;
@@ -11,7 +7,6 @@ using Pulumi.AzureNative.Web.V20210301.Inputs;
 using Pulumi.Docker;
 using ContainerArgs = Pulumi.AzureNative.Web.V20210301.Inputs.ContainerArgs;
 using SecretArgs = Pulumi.AzureNative.Web.V20210301.Inputs.SecretArgs;
-using StorageAccountArgs = Pulumi.AzureNative.Storage.StorageAccountArgs;
 
 class DaprStack : Stack
 {
@@ -19,74 +14,13 @@ class DaprStack : Stack
     {
         var resourceGroup = new ResourceGroup("rg");
 
-        var storageAccount = new StorageAccount("sa", new StorageAccountArgs
-        {
-            ResourceGroupName = resourceGroup.Name,
-            Sku = new Pulumi.AzureNative.Storage.Inputs.SkuArgs
-            {
-                Name = Pulumi.AzureNative.Storage.SkuName.Standard_LRS,
-            },
-            Kind = Pulumi.AzureNative.Storage.Kind.StorageV2,
-        });
+        var (storageAccount, blobContainer) = Common.StateStorage(resourceGroup);
 
-        var blobContainer = new BlobContainer("blobContainer", new BlobContainerArgs
-        {
-            AccountName = storageAccount.Name,
-            ResourceGroupName = resourceGroup.Name,
-            ContainerName = "state",
-        });
+        var (workspace, workspaceSharedKeys, appInsights) = Common.LoggingResources(resourceGroup);
 
-        var workspace = new Workspace("loganalytics", new WorkspaceArgs
-        {
-            ResourceGroupName = resourceGroup.Name,
-            Sku = new WorkspaceSkuArgs { Name = "PerGB2018" },
-            RetentionInDays = 30,
-        });
+        var containerAppEnv = Common.ContainerAppEnvironment(resourceGroup, workspace, workspaceSharedKeys);
 
-        var workspaceSharedKeys = Output.Tuple(resourceGroup.Name, workspace.Name).Apply(items =>
-            GetSharedKeys.InvokeAsync(new GetSharedKeysArgs
-            {
-                ResourceGroupName = items.Item1,
-                WorkspaceName = items.Item2,
-            }));
-
-        var appInsights = new Component("appInsights", new ComponentArgs
-        {
-            ApplicationType = "web",
-            Kind = "web",
-            ResourceGroupName = resourceGroup.Name,
-        });
-
-        var kubeEnv = new KubeEnvironment("env", new KubeEnvironmentArgs
-        {
-            ResourceGroupName = resourceGroup.Name,
-            EnvironmentType = "Managed",
-            AppLogsConfiguration = new AppLogsConfigurationArgs
-            {
-                Destination = "log-analytics",
-                LogAnalyticsConfiguration = new LogAnalyticsConfigurationArgs
-                {
-                    CustomerId = workspace.CustomerId,
-                    SharedKey = workspaceSharedKeys.Apply(r => r.PrimarySharedKey)
-                }
-            }
-        });
-
-        var registry = new Registry("registry", new RegistryArgs
-        {
-            ResourceGroupName = resourceGroup.Name,
-            Sku = new SkuArgs { Name = "Basic" },
-            AdminUserEnabled = true
-        });
-
-        var credentials = Output.Tuple(resourceGroup.Name, registry.Name).Apply(items =>
-            ListRegistryCredentials.InvokeAsync(new ListRegistryCredentialsArgs
-            {
-                ResourceGroupName = items.Item1,
-                RegistryName = items.Item2
-            }));
-        var adminUsername = credentials.Apply(credentials => credentials.Username);
-        var adminPassword = credentials.Apply(credentials => credentials.Passwords[0].Value);
+        var (registry, adminUsername, adminPassword) = Common.ContainerRegistryResources(resourceGroup);
 
         var customApp1Image = "app1";
         var myApp1Image = new Image(customApp1Image, new ImageArgs
@@ -117,7 +51,7 @@ class DaprStack : Stack
         var containerApp1 = new ContainerApp("app1", new ContainerAppArgs
         {
             ResourceGroupName = resourceGroup.Name,
-            KubeEnvironmentId = kubeEnv.Id,
+            KubeEnvironmentId = containerAppEnv.Id,
             Configuration = DaprContainerConfiguration(resourceGroup, storageAccount, registry, adminUsername, adminPassword),
             Template = new TemplateArgs
             {
@@ -155,7 +89,7 @@ class DaprStack : Stack
         var containerApp2 = new ContainerApp("app2", new ContainerAppArgs
         {
             ResourceGroupName = resourceGroup.Name,
-            KubeEnvironmentId = kubeEnv.Id,
+            KubeEnvironmentId = containerAppEnv.Id,
             Configuration = DaprContainerConfiguration(resourceGroup, storageAccount, registry, adminUsername, adminPassword),
             Template = new TemplateArgs
             {

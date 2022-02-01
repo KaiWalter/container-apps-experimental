@@ -28,8 +28,7 @@ RUN if [ "${INSTALL_NODE}" = "true" ]; then su vscode -c "umask 0002 && . /usr/l
 COPY --from=builder /root/.pulumi/bin/pulumi /pulumi/bin/pulumi
 COPY --from=builder /root/.pulumi/bin/*-dotnet* /pulumi/bin/
 
-# additional not tested statements
+# additional frameworks
 RUN curl -sSL https://dot.net/v1/dotnet-install.sh | sudo bash /dev/stdin --version 6.0.101 --architecture x64 --install-dir /usr/share/dotnet
-# ---
 
 ENV PATH "/pulumi/bin:${PATH}"
