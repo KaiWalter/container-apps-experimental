@@ -2,6 +2,11 @@
 
 Try container apps with various workloads
 
+- .NET core 3.1 based Dapr applications
+- .NET 6.0 / Functions v4 applications
+
+> hence `.devcontainer` is configured to do a primary .NET Core 3.1 SDK and a secondary .NET 6.0 SDK install
+
 ## get started / preparations
 
 sign in with Azure CLI
