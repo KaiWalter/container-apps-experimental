@@ -145,9 +145,10 @@ class MaximumStack : Stack
             scaleToQueue: true);
 
         // generate outputs for testing Function apps
+        this.CheckFApp1 = Output.Format($"https://{functionApp1.Configuration.Apply(c => c!.Ingress).Apply(i => i!.Fqdn)}/api/health");
+        this.CheckFApp2 = Output.Format($"https://{functionApp2.Configuration.Apply(c => c!.Ingress).Apply(i => i!.Fqdn)}/api/health");
         this.LoadtestFApp1 = Output.Format($"for i in {{1..500}}; do echo $i; curl -X POST -d 'TEST' https://{functionApp1.Configuration.Apply(c => c.Ingress).Apply(i => i.Fqdn)}/api/httpingress; done");
-        this.UrlFApp1 = Output.Format($"{functionApp1.Configuration.Apply(c => c!.Ingress).Apply(i => i!.Fqdn)}");
-        this.UrlFApp2 = Output.Format($"{functionApp2.Configuration.Apply(c => c!.Ingress).Apply(i => i!.Fqdn)}");
+        this.LoadtestUrlFApp1 = Output.Format($"{functionApp1.Configuration.Apply(c => c!.Ingress).Apply(i => i!.Fqdn)}");
 
         // Dapr ASP.NET Core apps
         ContainerApp daprApp1 = DaprContainerApp(
@@ -512,11 +513,14 @@ class MaximumStack : Stack
     [Output("loadtestfapp1")]
     public Output<string> LoadtestFApp1 { get; set; }
 
-    [Output("urlfapp1")]
-    public Output<string> UrlFApp1 { get; set; }
+    [Output("loadtesturlfapp1")]
+    public Output<string> LoadtestUrlFApp1 { get; set; }
 
-    [Output("urlfapp2")]
-    public Output<string> UrlFApp2 { get; set; }
+    [Output("checkfapp1")]
+    public Output<string> CheckFApp1 { get; set; }
+
+    [Output("checkfapp2")]
+    public Output<string> CheckFApp2 { get; set; }
 
     [Output("checkapp1")]
     public Output<string> CheckApp1 { get; set; }

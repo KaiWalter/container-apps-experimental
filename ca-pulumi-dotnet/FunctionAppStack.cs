@@ -100,7 +100,7 @@ class FunctionAppStack : Stack
             MaxSizeInMegabytes = 1024,
         });
 
-        ContainerApp containerApp1 = FunctionContainerApp(
+        ContainerApp functionApp1 = FunctionContainerApp(
             "fapp1",
             resourceGroup,
             kubeEnv,
@@ -111,7 +111,7 @@ class FunctionAppStack : Stack
             sb,
             sbQueue);
 
-        ContainerApp containerApp2 = FunctionContainerApp(
+        ContainerApp functionApp2 = FunctionContainerApp(
             "fapp2",
             resourceGroup,
             kubeEnv,
@@ -123,9 +123,11 @@ class FunctionAppStack : Stack
             sbQueue,
             scaleToQueue: true);
 
-        this.LoadtestFApp1 = Output.Format($"for i in {{1..500}}; do echo $i; curl -X POST -d 'TEST' https://{containerApp1.Configuration.Apply(c => c.Ingress).Apply(i => i.Fqdn)}/api/httpingress; done");
-        this.UrlFApp1 = Output.Format($"{containerApp1.Configuration.Apply(c => c!.Ingress).Apply(i => i!.Fqdn)}");
-        this.UrlFApp2 = Output.Format($"{containerApp2.Configuration.Apply(c => c!.Ingress).Apply(i => i!.Fqdn)}");
+        // generate outputs for testing Function apps
+        this.CheckFApp1 = Output.Format($"https://{functionApp1.Configuration.Apply(c => c!.Ingress).Apply(i => i!.Fqdn)}/api/health");
+        this.CheckFApp2 = Output.Format($"https://{functionApp2.Configuration.Apply(c => c!.Ingress).Apply(i => i!.Fqdn)}/api/health");
+        this.LoadtestFApp1 = Output.Format($"for i in {{1..500}}; do echo $i; curl -X POST -d 'TEST' https://{functionApp1.Configuration.Apply(c => c.Ingress).Apply(i => i.Fqdn)}/api/httpingress; done");
+        this.LoadtestUrlFApp1 = Output.Format($"{functionApp1.Configuration.Apply(c => c!.Ingress).Apply(i => i!.Fqdn)}");
 
         // load test service
         var loadtest = new LoadTest("loadtest", new LoadTestArgs
@@ -314,9 +316,13 @@ class FunctionAppStack : Stack
     [Output("loadtestfapp1")]
     public Output<string> LoadtestFApp1 { get; set; }
 
-    [Output("urlfapp1")]
-    public Output<string> UrlFApp1 { get; set; }
+    [Output("loadtesturlfapp1")]
+    public Output<string> LoadtestUrlFApp1 { get; set; }
 
-    [Output("urlfapp2")]
-    public Output<string> UrlFApp2 { get; set; }
+    [Output("checkfapp1")]
+    public Output<string> CheckFApp1 { get; set; }
+
+    [Output("checkfapp2")]
+    public Output<string> CheckFApp2 { get; set; }
+
 }
