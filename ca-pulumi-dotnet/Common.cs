@@ -17,7 +17,7 @@ using QueueArgs = Pulumi.AzureNative.ServiceBus.QueueArgs;
 
 public class Common
 {
-    internal static KubeEnvironment ContainerAppEnvironment(ResourceGroup? resourceGroup, Workspace? workspace, Output<GetSharedKeysResult>? workspaceSharedKeys) => new KubeEnvironment("env", new KubeEnvironmentArgs
+    internal static KubeEnvironment ContainerAppEnvironment(ResourceGroup? resourceGroup, Workspace? workspace, Output<GetSharedKeysResult>? workspaceSharedKeys, Component appInsights) => new KubeEnvironment("env", new KubeEnvironmentArgs
     {
         ResourceGroupName = resourceGroup.Name,
         EnvironmentType = "Managed",
@@ -29,6 +29,10 @@ public class Common
                 CustomerId = workspace.CustomerId,
                 SharedKey = workspaceSharedKeys.Apply(r => r.PrimarySharedKey)
             }
+        },
+        ContainerAppsConfiguration = new ContainerAppsConfigurationArgs
+        {
+            DaprAIInstrumentationKey = appInsights.InstrumentationKey,
         }
     });
 

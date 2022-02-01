@@ -28,7 +28,7 @@ class FunctionAppStack : Stack
 
         var (workspace, workspaceSharedKeys, appInsights) = Common.LoggingResources(resourceGroup);
 
-        var containerAppEnv = Common.ContainerAppEnvironment(resourceGroup, workspace, workspaceSharedKeys);
+        var containerAppEnv = Common.ContainerAppEnvironment(resourceGroup, workspace, workspaceSharedKeys, appInsights);
 
         var (registry, adminUsername, adminPassword) = Common.ContainerRegistryResources(resourceGroup);
 
