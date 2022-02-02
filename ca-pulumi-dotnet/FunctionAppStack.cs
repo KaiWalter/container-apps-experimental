@@ -116,6 +116,7 @@ class FunctionAppStack : Stack
 
         var containerApp = new ContainerApp(fappName, new ContainerAppArgs
         {
+            Name = fappName,
             ResourceGroupName = resourceGroup.Name,
             KubeEnvironmentId = kubeEnv.Id,
             Configuration = new ConfigurationArgs

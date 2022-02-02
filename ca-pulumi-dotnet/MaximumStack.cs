@@ -149,6 +149,7 @@ class MaximumStack : Stack
 
         var containerApp = new ContainerApp(fappName, new ContainerAppArgs
         {
+            Name = fappName,
             ResourceGroupName = resourceGroup.Name,
             KubeEnvironmentId = kubeEnv.Id,
             Configuration = new ConfigurationArgs
@@ -285,6 +286,7 @@ class MaximumStack : Stack
 
         var containerApp = new ContainerApp(appName, new ContainerAppArgs
         {
+            Name = appName,
             ResourceGroupName = resourceGroup.Name,
             KubeEnvironmentId = kubeEnv.Id,
             Configuration = DaprContainerConfiguration(resourceGroup, storageAccount, registry, adminUsername, adminPassword),
