@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export RESOURCE_GROUP_NAME="ca-with-cli" # All the resources would be deployed in this resource group
+export RESOURCE_GROUP_NAME="ca-kw" # All the resources would be deployed in this resource group
 export RESOURCE_GROUP_LOCATION="northeurope" # The resource group would be created in this location
 export LOG_ANALYTICS_WORKSPACE_NAME="containerappslogs" # Workspace to export application logs
 export CONTAINERAPPS_ENVIRONMENT_NAME="containerappsenvironment-$(( $RANDOM % 1000 ))" # Name of the ContainerApps Environment
@@ -9,8 +9,24 @@ az group create --name $RESOURCE_GROUP_NAME --location $RESOURCE_GROUP_LOCATION
 
 az network vnet create \
   --name ca-vnet \
+  --address-space 10.0.0.0/16 \
   --resource-group $RESOURCE_GROUP_NAME \
-  --subnet-name default
+
+az network vnet subnet create -n apps \
+  --resource-group $RESOURCE_GROUP_NAME \
+  --vnet-name ca-vnet \
+  --address-prefixes 10.0.0.0/21
+
+az network vnet subnet create -n cp \
+  --resource-group $RESOURCE_GROUP_NAME \
+  --vnet-name ca-vnet \
+  --address-prefixes 10.0.8.0/21
+
+az network vnet subnet create -n jump \
+  --resource-group $RESOURCE_GROUP_NAME \
+  --vnet-name ca-vnet \
+  --address-prefixes 10.0.16.0/24
+
 
 export SUBNET_ID=`az network vnet subnet show --vnet-name ca-vnet \
   --resource-group $RESOURCE_GROUP_NAME \

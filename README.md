@@ -84,6 +84,15 @@ curl -v $(pulumi stack output urlapp1)/healthapp2
 
 > the first 2 test individual health endpoints, and the 3rd tests service invocation from app1 to app2
 
+## test private network stack
+
+for the jump VM, a SSH public key needs to be provided before **Pulumi** deployment
+
+```
+pulumi config set sshpubkey "ssh-rsa AA...FY"
+```
+
+
 ## to do
 
 - [ ] [VNET integration](https://github.com/microsoft/azure-container-apps-preview/blob/main/docs/vnet.md)
