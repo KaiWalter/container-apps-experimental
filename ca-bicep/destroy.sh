@@ -1,9 +1,9 @@
 #!/bin/bash
 
-export ENVIRONMENTNAME=ca-kw
-export LOCATION=northeurope
-export RESOURCEGROUPNAME=$ENVIRONMENTNAME
+RESOURCE_GROUP="ca-kw"
+LOCATION="northeurope"
+ENVIRONMENTNAME="ca-kw"
 
-if [ $(az group exists --name $RESOURCEGROUPNAME) = true ]; then
-    az group delete --name $RESOURCEGROUPNAME -y
+if [ $(az group exists --name $RESOURCE_GROUP) = true ]; then
+    az group delete --name $RESOURCE_GROUP -y
 fi
