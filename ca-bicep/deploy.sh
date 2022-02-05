@@ -8,9 +8,15 @@ if [ $(az group exists --name $RESOURCE_GROUP) = false ]; then
     az group create --name $RESOURCE_GROUP --location $LOCATION
 fi
 
+SSHPUBKEY=$(cat ~/.ssh/id_rsa.pub)
+
 az deployment group create --resource-group $RESOURCE_GROUP \
     --template-file main.bicep \
-    --parameters environmentName=$ENVIRONMENTNAME
+    --parameters "{\"environmentName\": {\"value\": \"$ENVIRONMENTNAME\"},\"adminPasswordOrKey\": {\"value\": \"$SSHPUBKEY\"}}"
+
+    # --parameters environmentName=$ENVIRONMENTNAME adminPasswordOrKey='$(cat ~/.ssh/id_rsa.pub)' --verbose
+
+
 
 ENVIRONMENT_DEFAULT_DOMAIN=`az containerapp env show --name ${ENVIRONMENTNAME} --resource-group ${RESOURCE_GROUP} --query defaultDomain --out json | tr -d '"'`
 ENVIRONMENT_STATIC_IP=`az containerapp env show --name ${ENVIRONMENTNAME} --resource-group ${RESOURCE_GROUP} --query staticIp --out json | tr -d '"'`

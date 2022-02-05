@@ -1,11 +1,11 @@
 #!/bin/bash
 
-export ENVIRONMENTNAME=ca-kw
-export LOCATION=northeurope
-export RESOURCEGROUPNAME=$ENVIRONMENTNAME
-export ACRNAME=$(az acr list -g $RESOURCEGROUPNAME --query [0].name -o tsv)
-export ACRLOGINSERVER=$(az acr show -n $ACRNAME -g $RESOURCEGROUPNAME --query loginServer -o tsv)
-export ACRPASSWORD=$(az acr credential show -n $ACRNAME -g $RESOURCEGROUPNAME --query passwords[0].value -o tsv)
+RESOURCE_GROUP="ca-kw"
+LOCATION="northeurope"
+ENVIRONMENTNAME="ca-kw"
+export ACRNAME=$(az acr list -g $RESOURCE_GROUP --query [0].name -o tsv)
+export ACRLOGINSERVER=$(az acr show -n $ACRNAME -g $RESOURCE_GROUP --query loginServer -o tsv)
+export ACRPASSWORD=$(az acr credential show -n $ACRNAME -g $RESOURCE_GROUP --query passwords[0].value -o tsv)
 
 declare -a apps=("app1" "app2")
 timestamp=$(date +%s)
@@ -18,11 +18,11 @@ do
 
     az acr build -t $ACRLOGINSERVER/$app:$timestamp -r $ACRNAME ../$app
 
-    CONTAINERAPPID=$(az containerapp list -g $RESOURCEGROUPNAME --query "[?contains(name, '$app')].id" -o tsv)
+    CONTAINERAPPID=$(az containerapp list -g $RESOURCE_GROUP --query "[?contains(name, '$app')].id" -o tsv)
 
     if [ "$CONTAINERAPPID" = "" ]; then
 
-        az containerapp create -e $ENVIRONMENTNAME -g $RESOURCEGROUPNAME \
+        az containerapp create -e $ENVIRONMENTNAME -g $RESOURCE_GROUP \
             -i $ACRLOGINSERVER/$app:$timestamp \
             --registry-login-server $ACRLOGINSERVER \
             --registry-password "$ACRPASSWORD" \
@@ -37,7 +37,7 @@ do
 
     else
 
-        az containerapp update -g $RESOURCEGROUPNAME \
+        az containerapp update -g $RESOURCE_GROUP \
             -i $ACRLOGINSERVER/$app:$timestamp \
             --registry-login-server $ACRLOGINSERVER \
             --registry-password "$ACRPASSWORD" \
@@ -55,7 +55,7 @@ done
 
 for app in "${apps[@]}"
 do
-    echo https://$(az containerapp show -n $app -g $RESOURCEGROUPNAME --query configuration.ingress.fqdn -o tsv)/health
-    echo https://$(az containerapp show -n $app -g $RESOURCEGROUPNAME --query configuration.ingress.fqdn -o tsv)/health-remote
+    echo https://$(az containerapp show -n $app -g $RESOURCE_GROUP --query configuration.ingress.fqdn -o tsv)/health
+    echo https://$(az containerapp show -n $app -g $RESOURCE_GROUP --query configuration.ingress.fqdn -o tsv)/health-remote
 done
 

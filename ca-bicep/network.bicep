@@ -1,3 +1,6 @@
+param resourcePrefix string
+var networkSecurityGroupNameJumpVm = '${resourcePrefix}-vm-nsg'
+
 resource vnet 'Microsoft.Network/virtualNetworks@2021-05-01' = {
   name: 'vnet-${resourceGroup().name}'
   location: resourceGroup().location
@@ -30,4 +33,27 @@ resource vnet 'Microsoft.Network/virtualNetworks@2021-05-01' = {
   }
 }
 
+resource nsgJumpVm 'Microsoft.Network/networkSecurityGroups@2020-06-01' = {
+  name: networkSecurityGroupNameJumpVm
+  location: resourceGroup().location
+  properties: {
+    securityRules: [
+      {
+        name: 'SSH'
+        properties: {
+          priority: 1000
+          protocol: 'Tcp'
+          access: 'Allow'
+          direction: 'Inbound'
+          sourceAddressPrefix: '*'
+          sourcePortRange: '*'
+          destinationAddressPrefix: '*'
+          destinationPortRange: '22'
+        }
+      }
+    ]
+  }
+}
+
 output vnetId string = vnet.id
+output nsgJumpVmId string = nsgJumpVm.id
