@@ -23,7 +23,7 @@ module environment 'environment.bicep' = {
   params: {
     environmentName: environmentName
     location: location
-    vnetId: network.outputs.vnetId
+    vnetId: network.outputs.vnetSpokeId
     logAnalyticsCustomerId: logging.outputs.logAnalyticsCustomerId
     logAnalyticsSharedKey: logging.outputs.logAnalyticsSharedKey
     appInsightsInstrumentationKey: logging.outputs.appInsightsInstrumentationKey
@@ -33,7 +33,7 @@ module environment 'environment.bicep' = {
 module vm 'vm.bicep' = if (deployVm) {
   name: 'vm'
   params: {
-    vnetId: network.outputs.vnetId
+    vnetId: network.outputs.vnetHubId
     subnetName: 'jump'
     nsgId: network.outputs.nsgJumpVmId
     vmCustomData: ''
