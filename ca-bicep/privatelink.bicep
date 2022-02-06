@@ -45,5 +45,3 @@ resource pep 'Microsoft.Network/privateEndpoints@2021-05-01' = {
     ]
   }
 }
-
-output pepNicId string = pep.properties.networkInterfaces[0].id
