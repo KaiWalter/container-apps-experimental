@@ -1,9 +1,10 @@
 param resourcePrefix string
+param location string = resourceGroup().location
 var networkSecurityGroupNameJumpVm = '${resourcePrefix}-vm-nsg'
 
 resource vnetSpoke 'Microsoft.Network/virtualNetworks@2021-05-01' = {
   name: 'vnet-spoke-${resourceGroup().name}'
-  location: resourceGroup().location
+  location: location
   properties: {
     addressSpace: {
       addressPrefixes: [
@@ -21,6 +22,7 @@ resource vnetSpoke 'Microsoft.Network/virtualNetworks@2021-05-01' = {
         name: 'apps'
         properties: {
           addressPrefix: '10.0.8.0/21'
+          privateEndpointNetworkPolicies: 'Disabled'
         }
       }
       {
@@ -36,7 +38,7 @@ resource vnetSpoke 'Microsoft.Network/virtualNetworks@2021-05-01' = {
 
 resource vnetHub 'Microsoft.Network/virtualNetworks@2021-05-01' = {
   name: 'vnet-hub-${resourceGroup().name}'
-  location: resourceGroup().location
+  location: location
   properties: {
     addressSpace: {
       addressPrefixes: [
@@ -57,7 +59,7 @@ resource vnetHub 'Microsoft.Network/virtualNetworks@2021-05-01' = {
 
 resource nsgJumpVm 'Microsoft.Network/networkSecurityGroups@2020-06-01' = {
   name: networkSecurityGroupNameJumpVm
-  location: resourceGroup().location
+  location: location
   properties: {
     securityRules: [
       {
@@ -78,5 +80,7 @@ resource nsgJumpVm 'Microsoft.Network/networkSecurityGroups@2020-06-01' = {
 }
 
 output vnetSpokeId string = vnetSpoke.id
+output vnetSpokeName string = vnetSpoke.name
 output vnetHubId string = vnetHub.id
+output vnetHubName string = vnetHub.name
 output nsgJumpVmId string = nsgJumpVm.id

@@ -1,10 +1,11 @@
 param subnetSpokeId string
 param subnetHubId string
 param loadBalancerFipId string
+param location string = resourceGroup().location
 
 resource pl 'Microsoft.Network/privateLinkServices@2021-05-01' = {
   name: 'pl-container-app-env'
-  location: resourceGroup().location
+  location: location
   properties: {
     enableProxyProtocol: false
     loadBalancerFrontendIpConfigurations: [
@@ -29,8 +30,8 @@ resource pl 'Microsoft.Network/privateLinkServices@2021-05-01' = {
 }
 
 resource pep 'Microsoft.Network/privateEndpoints@2021-05-01' = {
-  name: 'pl-container-app-env'
-  location: resourceGroup().location
+  name: 'pep-container-app-env'
+  location: location
   properties: {
     subnet: {
       id: subnetHubId

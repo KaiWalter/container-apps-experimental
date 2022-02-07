@@ -1,5 +1,5 @@
-param location string = resourceGroup().location
 param environmentName string = 'env-${resourceGroup().name}'
+param location string = resourceGroup().location
 param adminPasswordOrKey string
 param deployVm bool = true
 
@@ -47,5 +47,40 @@ module cr 'cr.bicep' = {
   name: 'cr'
   params: {
     containerRegistryName: replace('${environmentName}cr', '-', '')
+    vnetName: network.outputs.vnetSpokeName
   }
 }
+
+module stg 'storage.bicep' = {
+  name: 'stg'
+  params: {
+    storageAccountName: replace('${environmentName}privatestorage', '-', '')
+    vnetName: network.outputs.vnetSpokeName
+  }
+}
+
+module kv 'keyvault.bicep' = {
+  name: 'kv'
+  params: {
+    keyVaultName: 'kv-${environmentName}'
+    vnetName: network.outputs.vnetSpokeName
+  }
+}
+
+module sb 'servicebus.bicep' = {
+  name: 'sb'
+  params: {
+    namespaceName: 'sb-${environmentName}'
+    vnetName: network.outputs.vnetSpokeName
+  }
+}
+
+module docdb 'docdb.bicep' = {
+  name:'docdb'
+  params: {
+    accountName: 'db-${environmentName}'
+    vnetName: network.outputs.vnetSpokeName
+  }
+}
+
+output env object = az.environment().suffixes

@@ -28,7 +28,7 @@ az deployment group create --resource-group $RESOURCE_GROUP \
     --parameters "{\"subnetSpokeId\": {\"value\": \"$SUBNET_SPOKE_JUMP_ID\"},\"subnetHubId\": {\"value\": \"$SUBNET_HUB_JUMP_ID\"},\"loadBalancerFipId\": {\"value\": \"$ILB_FIP_ID\"}}"
 
 ENVIRONMENT_DEFAULT_DOMAIN=`az containerapp env show --name ${ENVIRONMENTNAME} --resource-group ${RESOURCE_GROUP} --query defaultDomain -o tsv --only-show-errors`
-PEP_NIC_ID=`az network private-endpoint list -g $RESOURCE_GROUP --query [0].networkInterfaces[0].id -o tsv`
+PEP_NIC_ID=`az network private-endpoint list -g $RESOURCE_GROUP --query "[?name=='pep-container-app-env'].networkInterfaces[0].id" -o tsv`
 PEP_IP=`az network nic show --ids $PEP_NIC_ID --query ipConfigurations[0].privateIpAddress -o tsv`
 
 az deployment group create --resource-group $RESOURCE_GROUP \
