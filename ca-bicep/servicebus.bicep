@@ -13,6 +13,13 @@ resource sb 'Microsoft.ServiceBus/namespaces@2021-06-01-preview' = {
   properties: {}
 }
 
+resource queue1 'Microsoft.ServiceBus/namespaces/queues@2021-06-01-preview' = {
+  name: 'queue1'
+  parent: sb
+  properties: {
+  }
+}
+
 module pep 'resourceprivatelink.bicep' = {
   name: 'pep-resource-namespace'
   params: {
