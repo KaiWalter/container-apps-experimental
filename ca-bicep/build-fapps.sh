@@ -13,6 +13,8 @@ timestamp=$(date +%s)
 ENVID=`az containerapp env show -g $RESOURCE_GROUP --name $ENVIRONMENTNAME --query id -o tsv --only-show-errors`
 INSTKEY=`az monitor app-insights component show -g $RESOURCE_GROUP -a appins-$RESOURCE_GROUP --query instrumentationKey -o tsv`
 SBCONN=`az servicebus namespace authorization-rule keys list -g $RESOURCE_GROUP --namespace-name sb-$RESOURCE_GROUP --name RootManageSharedAccessKey --query primaryConnectionString -o tsv`
+STACCOUNT=`az storage account list -g $RESOURCE_GROUP --query [0].id -o tsv`
+STCONN=`az storage account show-connection-string --ids $STACCOUNT --query connectionString -o tsv`
 
 mkdir -p /tmp/deployment
 rm /tmp/deployment/*
@@ -25,6 +27,11 @@ cat <<EOF >/tmp/deployment/env.json
         "value": null
     },
     {
+        "name": "AzureWebJobsStorage",
+        "secretRef": "storageconnection",
+        "value": null
+    },
+    {
         "name": "queuename",
         "secretRef": null,
         "value": "queue1"
@@ -33,6 +40,11 @@ cat <<EOF >/tmp/deployment/env.json
         "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
         "secretRef": null,
         "value": "$INSTKEY"
+    },
+    {
+        "name": "AzureFunctionsWebHost__hostId",
+        "secretRef": null,
+        "value": "HOSTID"
     }
 ]
 EOF
@@ -55,6 +67,10 @@ do
         scaleby=Queue
     fi
 
+    # fix hostid https://github.com/Azure/azure-functions-host/wiki/Host-IDs
+    HOSTID=`head /dev/urandom | tr -dc a-z0-9 | head -c 20`    
+    sed s/HOSTID/$HOSTID/ /tmp/deployment/env.json > /tmp/deployment/env$app.json
+
     az deployment group create -n $app \
     -g $RESOURCE_GROUP \
     --template-file ./fapp.bicep \
@@ -66,14 +82,16 @@ do
         registryUsername=$ACRNAME \
         registryPassword="$ACRPASSWORD" \
         serviceBusConnection="$SBCONN" \
+        storageConnection="$STCONN" \
         useExternalIngress=true \
-        envVars=@/tmp/deployment/env.json \
+        envVars=@/tmp/deployment/env$app.json \
         scaleBy=$scaleby
 
 done
 
 for app in "${apps[@]}"
 do
-    echo https://$(az containerapp show -n $app -g $RESOURCE_GROUP --query configuration.ingress.fqdn -o tsv --only-show-errors)/api/health
+    fqdn=`az containerapp show -n $app -g $RESOURCE_GROUP --query configuration.ingress.fqdn -o tsv --only-show-errors`
+    echo https://$fqdn/api/health
 done
 

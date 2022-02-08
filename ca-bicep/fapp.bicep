@@ -19,6 +19,8 @@ param registryPassword string
 
 @secure()
 param serviceBusConnection string
+@secure()
+param storageConnection string
 
 param envVars array = []
 
@@ -57,7 +59,7 @@ var scalingRules = {
         name: 'http-rule'
         http: {
           metadata: {
-            concurrentRequests: '100'
+            concurrentRequests: '5'
           }
         }
       }
@@ -81,6 +83,10 @@ resource containerApp 'Microsoft.Web/containerApps@2021-03-01' = {
         {
           name: 'servicebusconnection'
           value: serviceBusConnection
+        }
+        {
+          name: 'storageconnection'
+          value: storageConnection
         }
       ]
       registries: [

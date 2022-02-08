@@ -173,6 +173,11 @@ class FunctionAppStack : Stack
                             {
                                 Name = "servicebusconnection",
                                 SecretRef = "servicebusconnection",
+                            },
+                            new EnvironmentVarArgs
+                            {
+                                Name = "AzureFunctionsWebHost__hostId",
+                                Value = Guid.NewGuid().ToString().Replace("-", ""),
                             }
                         }
                     }
