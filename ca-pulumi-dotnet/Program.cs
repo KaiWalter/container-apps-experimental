@@ -3,5 +3,5 @@ using Pulumi;
 
 class Program
 {
-    static Task<int> Main() => Deployment.RunAsync<PrivateNetworkStack>();
+    static Task<int> Main() => Deployment.RunAsync<FunctionAppStack>();
 }

@@ -4,6 +4,7 @@ using Pulumi.AzureNative.ContainerRegistry;
 using Pulumi.AzureNative.Insights;
 using Pulumi.AzureNative.Resources;
 using Pulumi.AzureNative.ServiceBus;
+using Pulumi.AzureNative.Storage;
 using Pulumi.AzureNative.Web.V20210301;
 using Pulumi.AzureNative.Web.V20210301.Inputs;
 using Pulumi.AzureNative.LoadTestService;
@@ -13,6 +14,7 @@ using System;
 
 using ContainerArgs = Pulumi.AzureNative.Web.V20210301.Inputs.ContainerArgs;
 using SecretArgs = Pulumi.AzureNative.Web.V20210301.Inputs.SecretArgs;
+using Queue = Pulumi.AzureNative.ServiceBus.Queue;
 
 class FunctionAppStack : Stack
 {
@@ -34,6 +36,8 @@ class FunctionAppStack : Stack
 
         var (sb, sbQueue) = Common.ServiceBusResources(resourceGroup);
 
+        var (storageAccount, blobContainer) = Common.StateStorage(resourceGroup);
+
         ContainerApp functionApp1 = FunctionContainerApp(
             "fapp1",
             resourceGroup,
@@ -42,6 +46,7 @@ class FunctionAppStack : Stack
             adminUsername,
             adminPassword,
             appInsights,
+            storageAccount,
             sb,
             sbQueue);
 
@@ -53,6 +58,7 @@ class FunctionAppStack : Stack
             adminUsername,
             adminPassword,
             appInsights,
+            storageAccount,
             sb,
             sbQueue,
             scaleToQueue: true);
@@ -98,6 +104,7 @@ class FunctionAppStack : Stack
         Output<string> adminUsername,
         Output<string> adminPassword,
         Component appInsights,
+        StorageAccount storageAccount,
         Namespace sb,
         Queue sbQueue,
         bool scaleToQueue = false)
@@ -147,6 +154,11 @@ class FunctionAppStack : Stack
                     {
                         Name = "servicebusconnection",
                         Value = Common.GetServiceBusConnectionString(resourceGroup.Name, sb.Name)
+                    },
+                    new SecretArgs
+                    {
+                        Name = "storageconnection",
+                        Value = Common.GetStorageKey(resourceGroup.Name,storageAccount.Name)
                     }
                 },
             },
@@ -173,6 +185,11 @@ class FunctionAppStack : Stack
                             {
                                 Name = "servicebusconnection",
                                 SecretRef = "servicebusconnection",
+                            },
+                            new EnvironmentVarArgs
+                            {
+                                Name = "AzureWebJobsStorage",
+                                SecretRef = "storageconnection",
                             },
                             new EnvironmentVarArgs
                             {
