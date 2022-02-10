@@ -15,7 +15,16 @@ az deployment group create --resource-group $RESOURCE_GROUP \
     --parameters "{\"environmentName\": {\"value\": \"$ENVIRONMENTNAME\"},\"adminPasswordOrKey\": {\"value\": \"$SSHPUBKEY\"}}"
 
 ENVIRONMENT_STATIC_IP=`az containerapp env show --name ${ENVIRONMENTNAME} --resource-group ${RESOURCE_GROUP} --query staticIp -o tsv --only-show-errors`
+
+echo "wait until ILB is available"
 ILB_FIP_ID=`az network lb list --query "[?frontendIpConfigurations[0].privateIpAddress=='${ENVIRONMENT_STATIC_IP}'].frontendIpConfigurations[0].id" -o tsv`
+until [ $ILB_FIP_ID ]
+do
+    printf '.' > /dev/tty
+    sleep 1
+    ILB_FIP_ID=`az network lb list --query "[?frontendIpConfigurations[0].privateIpAddress=='${ENVIRONMENT_STATIC_IP}'].frontendIpConfigurations[0].id" -o tsv`
+done
+printf '\n' > /dev/tty
 
 VNET_SPOKE_ID=`az network vnet list --resource-group ${RESOURCE_GROUP} --query "[?contains(name,'spoke')].id" -o tsv`
 SUBNET_SPOKE_JUMP_ID=`az network vnet show --ids $VNET_SPOKE_ID --query "subnets[?name=='jump'].id" -o tsv`
