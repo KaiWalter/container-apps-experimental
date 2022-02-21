@@ -18,7 +18,7 @@ do
 
     az acr build -t $ACRLOGINSERVER/$app:$timestamp -r $ACRNAME ../$app
 
-    CONTAINERAPPID=$(az containerapp list -g $RESOURCE_GROUP --query "[?contains(name, '$app')].id" -o tsv)
+    CONTAINERAPPID=$(az containerapp list -g $RESOURCE_GROUP --query "[?name == '$app'].id" -o tsv)
 
     if [ "$CONTAINERAPPID" = "" ]; then
 

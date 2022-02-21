@@ -61,7 +61,7 @@ do
         az acr build -t $ACRLOGINSERVER/$app:$timestamp -r $ACRNAME ../$app
     fi
 
-    if [ $app = 'app1' ]; then
+    if [ $app = 'fapp1' ]; then
         scaleby=Http
     else
         scaleby=Queue
