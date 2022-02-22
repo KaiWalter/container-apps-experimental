@@ -49,8 +49,14 @@ resource vnetHub 'Microsoft.Network/virtualNetworks@2021-05-01' = {
       {
         name: 'jump'
         properties: {
-          addressPrefix: '10.27.1.0/24'
+          addressPrefix: '10.27.1.0/26'
           privateEndpointNetworkPolicies: 'Disabled'
+        }
+      }
+      {
+        name: 'apim'
+        properties: {
+          addressPrefix: '10.27.1.64/26'
         }
       }
     ]

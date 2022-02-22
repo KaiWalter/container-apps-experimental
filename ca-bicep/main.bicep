@@ -1,7 +1,8 @@
 param environmentName string = 'env-${resourceGroup().name}'
 param location string = resourceGroup().location
 param adminPasswordOrKey string
-param deployVm bool = true
+
+var deployVm = adminPasswordOrKey != ''
 
 module network 'network.bicep' = {
   name: 'container-app-network'
@@ -76,7 +77,7 @@ module sb 'servicebus.bicep' = {
 }
 
 module docdb 'docdb.bicep' = {
-  name:'docdb'
+  name: 'docdb'
   params: {
     accountName: 'db-${environmentName}'
     vnetName: network.outputs.vnetSpokeName
