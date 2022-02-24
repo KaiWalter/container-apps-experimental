@@ -29,6 +29,7 @@ resource vnetSpoke 'Microsoft.Network/virtualNetworks@2021-05-01' = {
         name: 'jump'
         properties: {
           addressPrefix: '10.0.16.0/24'
+          privateEndpointNetworkPolicies: 'Disabled'
           privateLinkServiceNetworkPolicies: 'Disabled'
         }
       }
@@ -57,6 +58,13 @@ resource vnetHub 'Microsoft.Network/virtualNetworks@2021-05-01' = {
         name: 'apim'
         properties: {
           addressPrefix: '10.27.1.64/26'
+        }
+      }
+      {
+        name: 'appgw'
+        properties: {
+          addressPrefix: '10.27.1.128/26'
+          privateLinkServiceNetworkPolicies: 'Disabled'
         }
       }
     ]

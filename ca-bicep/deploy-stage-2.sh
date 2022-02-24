@@ -4,15 +4,19 @@ RESOURCE_GROUP="ca-kw"
 LOCATION="northeurope"
 APIMNAME="ca-kw"
 APPINSIGHTNAME="appins-ca-kw"
+LOGANALYTICSNAME="logs-ca-kw"
 
 fapp1Fqdn=`az containerapp show -n fapp1 -g $RESOURCE_GROUP --query configuration.ingress.fqdn -o tsv --only-show-errors`
 fapp2Fqdn=`az containerapp show -n fapp2 -g $RESOURCE_GROUP --query configuration.ingress.fqdn -o tsv --only-show-errors`
 echo $fapp1Fqdn
 echo $fapp2Fqdn
 
+    # privateEndpointName=${APIMNAME}-apim-pep \
+
 az deployment group create --resource-group $RESOURCE_GROUP \
     --template-file apim.bicep \
     --parameters apimName=$APIMNAME \
     appInsightsName=$APPINSIGHTNAME \
+    logAnalyticsWorkspaceName=$LOGANALYTICSNAME \
     fapp1Fqdn=$fapp1Fqdn \
     fapp2Fqdn=$fapp2Fqdn
