@@ -31,8 +31,8 @@ module environment 'environment.bicep' = {
   }
 }
 
-module vm 'vm.bicep' = if (deployVm) {
-  name: 'vm'
+module vmHub 'vm.bicep' = if (deployVm) {
+  name: 'vm-hub'
   params: {
     vnetId: network.outputs.vnetHubId
     subnetName: 'jump'
@@ -40,7 +40,20 @@ module vm 'vm.bicep' = if (deployVm) {
     vmCustomData: ''
     adminUsername: 'ca'
     adminPasswordOrKey: adminPasswordOrKey
-    vmName: '${environmentName}-jump-vm'
+    vmName: '${environmentName}-hub-jump-vm'
+  }
+}
+
+module vmSpoke 'vm.bicep' = if (deployVm) {
+  name: 'vm-spoke'
+  params: {
+    vnetId: network.outputs.vnetSpokeId
+    subnetName: 'jump'
+    nsgId: network.outputs.nsgJumpVmId
+    vmCustomData: ''
+    adminUsername: 'ca'
+    adminPasswordOrKey: adminPasswordOrKey
+    vmName: '${environmentName}-spoke-jump-vm'
   }
 }
 

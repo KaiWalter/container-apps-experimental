@@ -8,7 +8,7 @@ if [ $(az group exists --name $RESOURCE_GROUP) = false ]; then
     az group create --name $RESOURCE_GROUP --location $LOCATION
 fi
 
-if [ $1 = 'skipvm' ]; then
+if [ '$1' == 'skipvm' ]; then
     SSHPUBKEY=
 else
     SSHPUBKEY=$(cat ~/.ssh/id_rsa.pub) # create with ssh-keygen first

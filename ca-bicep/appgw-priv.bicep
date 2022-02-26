@@ -3,7 +3,9 @@ param apiGatewayIpAddress string
 param apiGatewayHostname string
 param logWorkspaceId string
 param logName string
-param subnetId string
+param subnetGatewayHubId string
+param subnetJumpHubId string
+param subnetJumpSpokeId string
 param location string = resourceGroup().location
 param protocol string = 'Http'
 param appGwMinCapacity int = 1
@@ -95,7 +97,7 @@ resource appgw 'Microsoft.Network/applicationGateways@2021-05-01' = {
         name: 'default'
         properties: {
           subnet: {
-            id: subnetId
+            id: subnetGatewayHubId
           }
         }
       }
@@ -107,26 +109,31 @@ resource appgw 'Microsoft.Network/applicationGateways@2021-05-01' = {
           publicIPAddress: {
             id: pip.id
           }
+          privateIPAllocationMethod:'Dynamic'
+          privateLinkConfiguration:{
+            id: resourceId('Microsoft.Network/applicationGateways/privateLinkConfigurations', appGwName, 'private')
+          }
         }
       }
     ]
-    // privateLinkConfigurations: [
-    //   {
-    //     name: 'private'
-    //     properties: {
-    //       ipConfigurations: [
-    //         {
-    //           name: 'private-ip'
-    //           properties: {
-    //             subnet: {
-    //               id: subnetId
-    //             }
-    //           }
-    //         }
-    //       ]
-    //     }
-    //   }
-    // ]
+    privateLinkConfigurations: [
+      {
+        name: 'private'
+        properties: {
+          ipConfigurations: [
+            {
+              name: 'private-ip'
+              properties: {
+                privateIPAllocationMethod:'Dynamic'
+                subnet: {
+                  id: subnetJumpHubId
+                }
+              }
+            }
+          ]
+        }
+      }
+    ]
     frontendPorts: [
       frontendPortConfiguration[protocol]
     ]
@@ -239,4 +246,23 @@ resource diagAppGw 'microsoft.insights/diagnosticSettings@2021-05-01-preview' = 
   }
 }
 
-output publicIpId string = pip.id
+resource pep 'Microsoft.Network/privateEndpoints@2021-05-01' = {
+  name: 'pep-priv-gateway'
+  location: location
+  properties: {
+    subnet: {
+      id: subnetJumpSpokeId
+    }
+    privateLinkServiceConnections: [
+      {
+        properties: {
+          privateLinkServiceId: appgw.id
+          groupIds: [
+            'default'
+          ]
+        }
+        name: 'pep-priv-gateway'
+      }
+    ]
+  }
+}

@@ -14,17 +14,22 @@ resource vnetSpoke 'Microsoft.Network/virtualNetworks@2021-05-01' existing = {
   name: 'vnet-spoke-${resourceGroup().name}'
 }
 
-resource apimSubnet 'Microsoft.Network/virtualNetworks/subnets@2021-05-01' existing = {
+resource apimHubSubnet 'Microsoft.Network/virtualNetworks/subnets@2021-05-01' existing = {
   name: 'apim'
   parent: vnetHub
 }
 
-resource appgwSubnet 'Microsoft.Network/virtualNetworks/subnets@2021-05-01' existing = {
+resource appgwHubSubnet 'Microsoft.Network/virtualNetworks/subnets@2021-05-01' existing = {
   name: 'appgw'
   parent: vnetHub
 }
 
-resource jumpSubnet 'Microsoft.Network/virtualNetworks/subnets@2021-05-01' existing = {
+resource jumpHubSubnet 'Microsoft.Network/virtualNetworks/subnets@2021-05-01' existing = {
+  name: 'jump'
+  parent: vnetHub
+}
+
+resource jumpSpokeSubnet 'Microsoft.Network/virtualNetworks/subnets@2021-05-01' existing = {
   name: 'jump'
   parent: vnetSpoke
 }
@@ -44,7 +49,7 @@ resource apim 'Microsoft.ApiManagement/service@2021-08-01' = {
     publisherName: 'kw'
     virtualNetworkType: 'Internal'
     virtualNetworkConfiguration: {
-      subnetResourceId: apimSubnet.id
+      subnetResourceId: apimHubSubnet.id
     }
   }
 }
@@ -256,14 +261,30 @@ resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2020-08
   name: logAnalyticsWorkspaceName
 }
 
-module appgw 'appgw.bicep' = {
-  name: 'appgw'
+// module appgw 'appgw.bicep' = {
+//   name: 'appgw'
+//   params: {
+//     appGwName: '${apimName}-gateway'
+//     location: location
+//     apiGatewayHostname: replace(apim.properties.gatewayUrl, 'https://', '')
+//     apiGatewayIpAddress: apim.properties.privateIPAddresses[0]
+//     subnetId: appgwHubSubnet.id
+//     protocol: 'Http'
+//     logWorkspaceId: logAnalyticsWorkspace.id
+//     logName: logAnalyticsWorkspaceName
+//   }
+// }
+
+module appgwpriv 'appgw-priv.bicep' = {
+  name: 'appgw-priv'
   params: {
-    appGwName: '${apimName}-gateway'
+    appGwName: '${apimName}-priv-gateway'
     location: location
-    apiGatewayHostname: replace(apim.properties.gatewayUrl,'https://','')
+    apiGatewayHostname: replace(apim.properties.gatewayUrl, 'https://', '')
     apiGatewayIpAddress: apim.properties.privateIPAddresses[0]
-    subnetId: appgwSubnet.id
+    subnetGatewayHubId: appgwHubSubnet.id
+    subnetJumpHubId: jumpHubSubnet.id
+    subnetJumpSpokeId: jumpSpokeSubnet.id
     protocol: 'Http'
     logWorkspaceId: logAnalyticsWorkspace.id
     logName: logAnalyticsWorkspaceName

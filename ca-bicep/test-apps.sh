@@ -4,7 +4,7 @@ RESOURCE_GROUP="ca-kw"
 LOCATION="northeurope"
 ENVIRONMENTNAME="ca-kw"
 
-IP=$(az vm list-ip-addresses -g $RESOURCE_GROUP --query "[?contains(virtualMachine.name, '$ENVIRONMENTNAME')].virtualMachine.network.publicIpAddresses[0].ipAddress" -o tsv)
+IP=$(az vm list-ip-addresses -g $RESOURCE_GROUP --query "[?contains(virtualMachine.name, 'hub')].virtualMachine.network.publicIpAddresses[0].ipAddress" -o tsv)
 
 declare -a apps=("app1" "app2")
 

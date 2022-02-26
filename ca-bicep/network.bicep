@@ -52,6 +52,7 @@ resource vnetHub 'Microsoft.Network/virtualNetworks@2021-05-01' = {
         properties: {
           addressPrefix: '10.27.1.0/26'
           privateEndpointNetworkPolicies: 'Disabled'
+          privateLinkServiceNetworkPolicies: 'Disabled'
         }
       }
       {
