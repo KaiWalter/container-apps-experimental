@@ -1,11 +1,10 @@
-## enable preview features
+### clean up priv gateway 
 
-SubscriptionNotRegisteredForFeature / Subscription /subscriptions/... is not registered for feature PrivateLinkConfigurations required to carry out the requested operation
-
-az feature list --namespace Microsoft.Network --output table | grep Priv
-
-az feature register --name AllowApplicationGatewayPrivateLink --namespace Microsoft.Network
-az feature register --name AllowAppGwPublicAndPrivateIpOnSamePort --namespace Microsoft.Network
-az provider register -n Microsoft.Network
-
-Microsoft.Network/AllowAppGwPublicAndPrivateIpOnSamePort
+```
+RESOURCE_GROUP="ca-kw"
+az network private-endpoint delete -g $RESOURCE_GROUP -n pep-priv-gateway
+az network application-gateway delete -g $RESOURCE_GROUP -n ca-kw-priv-gateway
+az network public-ip delete -g $RESOURCE_GROUP -n ca-kw-priv-gateway-pip
+./deploy-stage-2.sh
+./test-fapps.sh
+```

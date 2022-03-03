@@ -50,6 +50,8 @@ var listenerCertConfiguration = {
   }
 }
 
+var fipName = 'appgw-frontend'
+
 resource pip 'Microsoft.Network/publicIPAddresses@2021-05-01' = {
   name: '${appGwName}-pip'
   location: location
@@ -104,13 +106,13 @@ resource appgw 'Microsoft.Network/applicationGateways@2021-05-01' = {
     ]
     frontendIPConfigurations: [
       {
-        name: 'default'
+        name: fipName
         properties: {
           publicIPAddress: {
             id: pip.id
           }
-          privateIPAllocationMethod:'Dynamic'
-          privateLinkConfiguration:{
+          privateIPAllocationMethod: 'Dynamic'
+          privateLinkConfiguration: {
             id: resourceId('Microsoft.Network/applicationGateways/privateLinkConfigurations', appGwName, 'private')
           }
         }
@@ -124,7 +126,8 @@ resource appgw 'Microsoft.Network/applicationGateways@2021-05-01' = {
             {
               name: 'private-ip'
               properties: {
-                privateIPAllocationMethod:'Dynamic'
+                primary: true
+                privateIPAllocationMethod: 'Dynamic'
                 subnet: {
                   id: subnetJumpHubId
                 }
@@ -142,7 +145,7 @@ resource appgw 'Microsoft.Network/applicationGateways@2021-05-01' = {
         name: 'default'
         properties: {
           frontendIPConfiguration: {
-            id: resourceId('Microsoft.Network/applicationGateways/frontendIPConfigurations', appGwName, 'default')
+            id: resourceId('Microsoft.Network/applicationGateways/frontendIPConfigurations', appGwName, fipName)
           }
           frontendPort: {
             id: resourceId('Microsoft.Network/applicationGateways/frontendPorts', appGwName, 'default')
@@ -258,7 +261,7 @@ resource pep 'Microsoft.Network/privateEndpoints@2021-05-01' = {
         properties: {
           privateLinkServiceId: appgw.id
           groupIds: [
-            'default'
+            fipName
           ]
         }
         name: 'pep-priv-gateway'
