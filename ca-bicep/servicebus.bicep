@@ -16,8 +16,7 @@ resource sb 'Microsoft.ServiceBus/namespaces@2021-06-01-preview' = {
 resource queue1 'Microsoft.ServiceBus/namespaces/queues@2021-06-01-preview' = {
   name: 'queue1'
   parent: sb
-  properties: {
-  }
+  properties: {}
 }
 
 module pep 'resourceprivatelink.bicep' = {
@@ -27,5 +26,6 @@ module pep 'resourceprivatelink.bicep' = {
     groupId: 'namespace'
     dnsZone: 'privatelink.servicebus.windows.net'
     vnetName: vnetName
+    location: location
   }
 }

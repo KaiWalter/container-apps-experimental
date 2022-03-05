@@ -3,7 +3,7 @@
 set -e
 
 RESOURCE_GROUP="ca-kw"
-LOCATION="northeurope"
+LOCATION="westeurope"
 APIMNAME="ca-kw"
 APPINSIGHTNAME="appins-ca-kw"
 LOGANALYTICSNAME="logs-ca-kw"

@@ -2,7 +2,7 @@
 
 RESOURCE_GROUP="ca-kw-2"
 LOCATION="northeurope"
-CONTAINERAPPS_ENVIRONMENT=$(az resource list -g $RESOURCE_GROUP --resource-type Microsoft.Web/kubeEnvironments --query [0].name -o tsv)
+CONTAINERAPPS_ENVIRONMENT=$(az resource list -g $RESOURCE_GROUP --resource-type Microsoft.App/managedEnvironments --query [0].name -o tsv)
 CONTAINERAPPID=$(az containerapp list -g $RESOURCE_GROUP --query "[0].id" -o tsv)
 BACKENDURL=`az containerapp show --id $CONTAINERAPPID --query configuration.ingress.fqdn -o tsv`
 

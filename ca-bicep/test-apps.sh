@@ -1,7 +1,7 @@
 #!/bin/bash
 
 RESOURCE_GROUP="ca-kw"
-LOCATION="northeurope"
+LOCATION="westeurope"
 ENVIRONMENTNAME="ca-kw"
 
 IP=$(az vm list-ip-addresses -g $RESOURCE_GROUP --query "[?contains(virtualMachine.name, 'hub')].virtualMachine.network.publicIpAddresses[0].ipAddress" -o tsv)

@@ -4,7 +4,7 @@ export RESOURCE_GROUP_NAME="ca-kw" # All the resources would be deployed in this
 export RESOURCE_GROUP_LOCATION="northeurope" # The resource group would be created in this location
 
 #export CONTAINERAPPS_ENVIRONMENT=$(az containerapp env list -g $RESOURCE_GROUP_NAME --query [0].name -o tsv)
-export CONTAINERAPPS_ENVIRONMENT=$(az resource list -g $RESOURCE_GROUP_NAME --resource-type Microsoft.Web/kubeEnvironments --query [0].name -o tsv)
+export CONTAINERAPPS_ENVIRONMENT=$(az resource list -g $RESOURCE_GROUP_NAME --resource-type Microsoft.App/managedEnvironments --query [0].name -o tsv)
 
 STORAGE=$(az storage account list -g $RESOURCE_GROUP_NAME --query [0].name -o tsv)
 STORAGEKEY=$(az storage account keys list -g $RESOURCE_GROUP_NAME -n $STORAGE --query [0].value -o tsv)

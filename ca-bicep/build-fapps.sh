@@ -1,7 +1,7 @@
 #!/bin/bash
 
 RESOURCE_GROUP="ca-kw"
-LOCATION="northeurope"
+LOCATION="westeurope"
 ENVIRONMENTNAME="ca-kw"
 ACRNAME=$(az acr list -g $RESOURCE_GROUP --query [0].name -o tsv)
 ACRLOGINSERVER=$(az acr show -n $ACRNAME -g $RESOURCE_GROUP --query loginServer -o tsv)

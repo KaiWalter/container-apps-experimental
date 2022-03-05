@@ -1,34 +1,51 @@
 #!/bin/bash
 
+set -e
+
 RESOURCE_GROUP="ca-kw"
-LOCATION="northeurope"
+LOCATION="westeurope"
 ENVIRONMENTNAME="ca-kw"
 
 if [ $(az group exists --name $RESOURCE_GROUP) = false ]; then
     az group create --name $RESOURCE_GROUP --location $LOCATION
 fi
 
-if [ '$1' == 'skipvm' ]; then
-    SSHPUBKEY=
-else
+if [ "$1" == "" ]; then
     SSHPUBKEY=$(cat ~/.ssh/id_rsa.pub) # create with ssh-keygen first
+else
+    SSHPUBKEY=
 fi
 
-az deployment group create --resource-group $RESOURCE_GROUP \
+DEPLOYMENT=`az deployment group create --resource-group $RESOURCE_GROUP \
     --template-file main.bicep \
-    --parameters "{\"environmentName\": {\"value\": \"$ENVIRONMENTNAME\"},\"adminPasswordOrKey\": {\"value\": \"$SSHPUBKEY\"}}"
+    --parameters environmentName=$ENVIRONMENTNAME \
+    adminPasswordOrKey="$SSHPUBKEY" \
+    --query properties.outputs`
 
-ENVIRONMENT_STATIC_IP=`az containerapp env show --name ${ENVIRONMENTNAME} --resource-group ${RESOURCE_GROUP} --query staticIp -o tsv --only-show-errors`
-ENVIRONMENT_DEFAULT_DOMAIN=`az containerapp env show --name ${ENVIRONMENTNAME} --resource-group ${RESOURCE_GROUP} --query defaultDomain -o tsv --only-show-errors`
+echo $DEPLOYMENT
+
+ENVIRONMENT_STATIC_IP=`echo $DEPLOYMENT | jq .environmentStaticIp.value -r`
+ENVIRONMENT_DEFAULT_DOMAIN=`echo $DEPLOYMENT | jq .environmentDefaultDomain.value -r`
 ENVIRONMENT_CODE=`echo $ENVIRONMENT_DEFAULT_DOMAIN | grep -oP "^[a-z0-9\-]{1,25}"`
+
+echo $ENVIRONMENT_STATIC_IP $ENVIRONMENT_DEFAULT_DOMAIN $ENVIRONMENT_CODE
+
 CLUSTER_RG=`az group list --query "[?contains(name, '$ENVIRONMENT_CODE')].name" -o tsv`
 ILB_FIP_ID=`az network lb show -g $CLUSTER_RG -n kubernetes-internal --query "frontendIpConfigurations[0].id" -o tsv`
+
+echo $CLUSTER_RG $ILB_FIP_ID
 
 VNET_SPOKE_ID=`az network vnet list --resource-group ${RESOURCE_GROUP} --query "[?contains(name,'spoke')].id" -o tsv`
 SUBNET_SPOKE_JUMP_ID=`az network vnet show --ids $VNET_SPOKE_ID --query "subnets[?name=='jump'].id" -o tsv`
 
+echo $VNET_SPOKE_ID $SUBNET_SPOKE_JUMP_ID
+
 VNET_HUB_ID=`az network vnet list --resource-group ${RESOURCE_GROUP} --query "[?contains(name,'hub')].id" -o tsv`
 SUBNET_HUB_JUMP_ID=`az network vnet show --ids $VNET_HUB_ID --query "subnets[?name=='jump'].id" -o tsv`
+
+echo $VNET_HUB_ID $SUBNET_HUB_JUMP_ID
+
+read -p "wait"
 
 az deployment group create --resource-group $RESOURCE_GROUP \
     --template-file privatelink.bicep \

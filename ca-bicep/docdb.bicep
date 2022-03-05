@@ -54,5 +54,6 @@ module pep 'resourceprivatelink.bicep' = {
     groupId: 'Sql'
     dnsZone: 'privatelink.documents.azure.com'
     vnetName: vnetName
+    location: location
   }
 }
