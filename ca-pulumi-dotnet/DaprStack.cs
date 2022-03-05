@@ -2,11 +2,11 @@ using Pulumi;
 using Pulumi.AzureNative.ContainerRegistry;
 using Pulumi.AzureNative.Resources;
 using Pulumi.AzureNative.Storage;
-using Pulumi.AzureNative.Web.V20210301;
-using Pulumi.AzureNative.Web.V20210301.Inputs;
+using Pulumi.AzureNative.App.V20220101Preview;
+using Pulumi.AzureNative.App.V20220101Preview.Inputs;
 using Pulumi.Docker;
-using ContainerArgs = Pulumi.AzureNative.Web.V20210301.Inputs.ContainerArgs;
-using SecretArgs = Pulumi.AzureNative.Web.V20210301.Inputs.SecretArgs;
+using ContainerArgs = Pulumi.AzureNative.App.V20220101Preview.Inputs.ContainerArgs;
+using SecretArgs = Pulumi.AzureNative.App.V20220101Preview.Inputs.SecretArgs;
 
 class DaprStack : Stack
 {
@@ -48,10 +48,12 @@ class DaprStack : Stack
             }
         });
 
+        var dcState = DaprStateComponent(containerAppEnv, storageAccount, blobContainer);
+
         var containerApp1 = new ContainerApp("app1", new ContainerAppArgs
         {
             ResourceGroupName = resourceGroup.Name,
-            KubeEnvironmentId = containerAppEnv.Id,
+            ManagedEnvironmentId = containerAppEnv.Id,
             Configuration = DaprContainerConfiguration(resourceGroup, storageAccount, registry, adminUsername, adminPassword),
             Template = new TemplateArgs
             {
@@ -78,10 +80,6 @@ class DaprStack : Stack
                     Enabled = true,
                     AppId = "app1",
                     AppPort = 80,
-                    Components =
-                    {
-                        DaprStateComponent(storageAccount, blobContainer),
-                    },
                 },
             },
         });
@@ -89,7 +87,7 @@ class DaprStack : Stack
         var containerApp2 = new ContainerApp("app2", new ContainerAppArgs
         {
             ResourceGroupName = resourceGroup.Name,
-            KubeEnvironmentId = containerAppEnv.Id,
+            ManagedEnvironmentId = containerAppEnv.Id,
             Configuration = DaprContainerConfiguration(resourceGroup, storageAccount, registry, adminUsername, adminPassword),
             Template = new TemplateArgs
             {
@@ -116,10 +114,6 @@ class DaprStack : Stack
                     Enabled = true,
                     AppId = "app2",
                     AppPort = 80,
-                    Components =
-                    {
-                        DaprStateComponent(storageAccount, blobContainer),
-                    },
                 },
             }
         });
@@ -168,11 +162,12 @@ class DaprStack : Stack
         };
     }
 
-    private static DaprComponentArgs DaprStateComponent(StorageAccount storageAccount, BlobContainer blobContainer)
+    private static DaprComponentArgs DaprStateComponent(ManagedEnvironment environment, StorageAccount storageAccount, BlobContainer blobContainer)
         => new DaprComponentArgs
         {
+            EnvironmentName = environment.Name.Apply(n => n),
             Name = "statestore",
-            Type = "state.azure.blobstorage",
+            ComponentType = "state.azure.blobstorage",
             Version = "v1",
             Metadata =
                             {

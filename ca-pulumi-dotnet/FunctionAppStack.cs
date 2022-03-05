@@ -5,15 +5,15 @@ using Pulumi.AzureNative.Insights;
 using Pulumi.AzureNative.Resources;
 using Pulumi.AzureNative.ServiceBus;
 using Pulumi.AzureNative.Storage;
-using Pulumi.AzureNative.Web.V20210301;
-using Pulumi.AzureNative.Web.V20210301.Inputs;
+using Pulumi.AzureNative.App.V20220101Preview;
+using Pulumi.AzureNative.App.V20220101Preview.Inputs;
 using Pulumi.AzureNative.LoadTestService;
 using Pulumi.AzureNative.LoadTestService.Inputs;
 using Pulumi.Docker;
 using System;
 
-using ContainerArgs = Pulumi.AzureNative.Web.V20210301.Inputs.ContainerArgs;
-using SecretArgs = Pulumi.AzureNative.Web.V20210301.Inputs.SecretArgs;
+using ContainerArgs = Pulumi.AzureNative.App.V20220101Preview.Inputs.ContainerArgs;
+using SecretArgs = Pulumi.AzureNative.App.V20220101Preview.Inputs.SecretArgs;
 using Queue = Pulumi.AzureNative.ServiceBus.Queue;
 
 class FunctionAppStack : Stack
@@ -74,6 +74,7 @@ class FunctionAppStack : Stack
         {
             ResourceGroupName = resourceGroup.Name,
             Description = "Load testing for Container Apps scaling",
+            Location = "northeurope",
             Identity = new SystemAssignedServiceIdentityArgs
             {
                 Type = SystemAssignedServiceIdentityType.SystemAssigned,
@@ -99,7 +100,7 @@ class FunctionAppStack : Stack
     private static ContainerApp FunctionContainerApp(
         string fappName,
         ResourceGroup resourceGroup,
-        KubeEnvironment kubeEnv,
+        ManagedEnvironment kubeEnv,
         Registry registry,
         Output<string> adminUsername,
         Output<string> adminPassword,
@@ -125,7 +126,7 @@ class FunctionAppStack : Stack
         {
             Name = fappName,
             ResourceGroupName = resourceGroup.Name,
-            KubeEnvironmentId = kubeEnv.Id,
+            ManagedEnvironmentId = kubeEnv.Id,
             Configuration = new ConfigurationArgs
             {
                 ActiveRevisionsMode = ActiveRevisionsMode.Single,
