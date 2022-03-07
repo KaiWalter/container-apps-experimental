@@ -23,12 +23,13 @@
 	// Add the IDs of extensions you want installed when the container is created.
 	"extensions": [
 		"ms-dotnettools.csharp",
-		"ms-azuretools.vscode-bicep"
+		"ms-azuretools.vscode-bicep",
+		"ms-azuretools.vscode-azurefunctions"
 	],
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [],
 	// Use 'postCreateCommand' to run commands after the container is created.
-	// "postCreateCommand": "uname -a",
+	"postCreateCommand": "./.devcontainer/postCreateCommand.sh",
 	// Replace when using a ptrace-based debugger like C++, Go, and Rust
 	// "runArgs": [ "--init", "--cap-add=SYS_PTRACE", "--security-opt", "seccomp=unconfined" ],
 	"runArgs": [

@@ -24,7 +24,7 @@ az account set -s "{subscription-name-or-id}"
 [re-register Microsoft.Web](https://github.com/microsoft/azure-container-apps/wiki/Known-Issues-for-public-preview)
 
 ```shell
-az provider register --namespace Microsoft.Web
+az provider register --namespace Microsoft.App
 ```
 
 sign in with Pulumi
