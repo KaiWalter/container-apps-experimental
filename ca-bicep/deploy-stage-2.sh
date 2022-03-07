@@ -4,12 +4,15 @@ set -e
 
 RESOURCE_GROUP="ca-kw"
 LOCATION="westeurope"
+SUBSCRIPTION=`az account show --query id -o tsv`
 APIMNAME="ca-kw"
 APPINSIGHTNAME="appins-ca-kw"
 LOGANALYTICSNAME="logs-ca-kw"
 
-fapp1Fqdn=`az containerapp show -n fapp1 -g $RESOURCE_GROUP --query configuration.ingress.fqdn -o tsv --only-show-errors`
-fapp2Fqdn=`az containerapp show -n fapp2 -g $RESOURCE_GROUP --query configuration.ingress.fqdn -o tsv --only-show-errors`
+# fapp1Fqdn=`az containerapp show -n fapp1 -g $RESOURCE_GROUP --query configuration.ingress.fqdn -o tsv --only-show-errors`
+# fapp2Fqdn=`az containerapp show -n fapp2 -g $RESOURCE_GROUP --query configuration.ingress.fqdn -o tsv --only-show-errors`
+fapp1Fqdn=`az rest --method get -u /subscriptions/$SUBSCRIPTION/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.App/containerApps/fapp1?api-version=2022-01-01-preview --query properties.configuration.ingress.fqdn -o tsv`
+fapp2Fqdn=`az rest --method get -u /subscriptions/$SUBSCRIPTION/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.App/containerApps/fapp2?api-version=2022-01-01-preview --query properties.configuration.ingress.fqdn -o tsv`
 
 az deployment group create --resource-group $RESOURCE_GROUP \
     --template-file apim.bicep \
