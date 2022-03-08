@@ -23,7 +23,8 @@ module pep 'resourceprivatelink.bicep' = {
   params: {
     resourceId: stg.id
     groupId: 'blob'
-    dnsZone:'privatelink.blob.${environment().suffixes.storage}'
+    dnsZone: 'privatelink.blob.${environment().suffixes.storage}'
     vnetName: vnetName
+    location: location
   }
 }

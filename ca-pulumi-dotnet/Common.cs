@@ -8,8 +8,8 @@ using Pulumi.AzureNative.Resources;
 using Pulumi.AzureNative.ServiceBus;
 using Pulumi.AzureNative.ServiceBus.Inputs;
 using Pulumi.AzureNative.Storage;
-using Pulumi.AzureNative.Web.V20210301;
-using Pulumi.AzureNative.Web.V20210301.Inputs;
+using Pulumi.AzureNative.App.V20220101Preview;
+using Pulumi.AzureNative.App.V20220101Preview.Inputs;
 using SkuName = Pulumi.AzureNative.ServiceBus.SkuName;
 using StorageAccountArgs = Pulumi.AzureNative.Storage.StorageAccountArgs;
 using Queue = Pulumi.AzureNative.ServiceBus.Queue;
@@ -17,10 +17,9 @@ using QueueArgs = Pulumi.AzureNative.ServiceBus.QueueArgs;
 
 public class Common
 {
-    internal static KubeEnvironment ContainerAppEnvironment(ResourceGroup? resourceGroup, Workspace? workspace, Output<GetSharedKeysResult>? workspaceSharedKeys, Component appInsights) => new KubeEnvironment("env", new KubeEnvironmentArgs
+    internal static ManagedEnvironment ContainerAppEnvironment(ResourceGroup? resourceGroup, Workspace? workspace, Output<GetSharedKeysResult>? workspaceSharedKeys, Component appInsights) => new ManagedEnvironment("env", new ManagedEnvironmentArgs
     {
         ResourceGroupName = resourceGroup.Name,
-        EnvironmentType = "Managed",
         AppLogsConfiguration = new AppLogsConfigurationArgs
         {
             Destination = "log-analytics",
@@ -30,10 +29,7 @@ public class Common
                 SharedKey = workspaceSharedKeys.Apply(r => r.PrimarySharedKey)
             }
         },
-        ContainerAppsConfiguration = new ContainerAppsConfigurationArgs
-        {
-            DaprAIInstrumentationKey = appInsights.InstrumentationKey,
-        }
+        DaprAIInstrumentationKey = appInsights.InstrumentationKey,
     });
 
     internal static (Workspace, Output<GetSharedKeysResult>, Component) LoggingResources(ResourceGroup? resourceGroup)
@@ -165,5 +161,5 @@ public class Common
             // Build the connection string to the storage account.
             return Output.Create<string>(primaryStorageKey);
         });
-    }    
+    }
 }

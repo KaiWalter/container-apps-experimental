@@ -5,12 +5,12 @@ param logAnalyticsCustomerId string
 param logAnalyticsSharedKey string
 param appInsightsInstrumentationKey string
 
-resource environment 'Microsoft.Web/kubeEnvironments@2021-03-01' = {
+// https://github.com/Azure/azure-rest-api-specs/blob/Microsoft.App-2022-01-01-preview/specification/app/resource-manager/Microsoft.App/preview/2022-01-01-preview/ManagedEnvironments.json
+
+resource environment 'Microsoft.App/managedEnvironments@2022-01-01-preview' = {
   name: environmentName
   location: location
   properties: {
-    type: 'managed'
-    internalLoadBalancerEnabled: true
     appLogsConfiguration: {
       destination: 'log-analytics'
       logAnalyticsConfiguration: {
@@ -18,14 +18,15 @@ resource environment 'Microsoft.Web/kubeEnvironments@2021-03-01' = {
         sharedKey: logAnalyticsSharedKey
       }
     }
-    containerAppsConfiguration: {
-      daprAIInstrumentationKey: appInsightsInstrumentationKey
-      controlPlaneSubnetResourceId: '${vnetId}/subnets/cp'
-      appSubnetResourceId: '${vnetId}/subnets/apps'
-      internalOnly: true
+    daprAIInstrumentationKey: appInsightsInstrumentationKey
+    vnetConfiguration: {
+      infrastructureSubnetId: '${vnetId}/subnets/cp'
+      runtimeSubnetId: '${vnetId}/subnets/apps'
+      internal: true
     }
   }
 }
 
-output location string = location
-output environmentId string = environment.id
+output environment object = environment.properties
+output environmentStaticIp string = environment.properties.staticIp
+output environmentDefaultDomain string = environment.properties.defaultDomain

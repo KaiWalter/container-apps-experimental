@@ -5,7 +5,7 @@ param logAnalyticsCustomerId string
 param logAnalyticsSharedKey string
 param appInsightsInstrumentationKey string
 
-resource environment 'Microsoft.Web/kubeEnvironments@2021-03-01' = {
+resource environment 'Microsoft.App/managedEnvironments@2021-03-01' = {
   name: environmentName
   location: location
   properties: {

@@ -7,17 +7,17 @@ using Pulumi.AzureNative.Network;
 using Pulumi.AzureNative.Network.Inputs;
 using Pulumi.AzureNative.Resources;
 using Pulumi.AzureNative.ServiceBus;
-using Pulumi.AzureNative.Web.V20210301;
-using Pulumi.AzureNative.Web.V20210301.Inputs;
+using Pulumi.AzureNative.App.V20220101Preview;
+using Pulumi.AzureNative.App.V20220101Preview.Inputs;
 using Pulumi.Docker;
 using System;
 
-using ContainerArgs = Pulumi.AzureNative.Web.V20210301.Inputs.ContainerArgs;
+using ContainerArgs = Pulumi.AzureNative.App.V20220101Preview.Inputs.ContainerArgs;
 using Image = Pulumi.Docker.Image;
 using ImageArgs = Pulumi.Docker.ImageArgs;
 using NetworkProfileArgs = Pulumi.AzureNative.Compute.Inputs.NetworkProfileArgs;
 using PublicIPAddressSkuArgs = Pulumi.AzureNative.Compute.Inputs.PublicIPAddressSkuArgs;
-using SecretArgs = Pulumi.AzureNative.Web.V20210301.Inputs.SecretArgs;
+using SecretArgs = Pulumi.AzureNative.App.V20220101Preview.Inputs.SecretArgs;
 using SshPublicKeyArgs = Pulumi.AzureNative.Compute.Inputs.SshPublicKeyArgs;
 using SubnetArgs = Pulumi.AzureNative.Network.SubnetArgs;
 using SubResourceArgs = Pulumi.AzureNative.Compute.Inputs.SubResourceArgs;
@@ -159,17 +159,14 @@ class PrivateNetworkStack : Stack
 
         var (workspace, workspaceSharedKeys, appInsights) = Common.LoggingResources(resourceGroup);
 
-        var containerAppEnv = new KubeEnvironment("env", new KubeEnvironmentArgs
+        var containerAppEnv = new ManagedEnvironment("env", new ManagedEnvironmentArgs
         {
-
-            ContainerAppsConfiguration = new ContainerAppsConfigurationArgs
+            VnetConfiguration = new VnetConfigurationArgs
             {
-                AppSubnetResourceId = subnetBackend.Id,
-                ControlPlaneSubnetResourceId = subnetCP.Id,
+                InfrastructureSubnetId = subnetCP.Id,
+                RuntimeSubnetId = subnetBackend.Id,
             },
             ResourceGroupName = resourceGroup.Name,
-            InternalLoadBalancerEnabled = true,
-            EnvironmentType = "Managed",
             AppLogsConfiguration = new AppLogsConfigurationArgs
             {
                 Destination = "log-analytics",
@@ -237,7 +234,7 @@ class PrivateNetworkStack : Stack
     private static ContainerApp FunctionContainerApp(
         string fappName,
         ResourceGroup resourceGroup,
-        KubeEnvironment kubeEnv,
+        ManagedEnvironment kubeEnv,
         Registry registry,
         Output<string> adminUsername,
         Output<string> adminPassword,
@@ -262,7 +259,7 @@ class PrivateNetworkStack : Stack
         {
             Name = fappName,
             ResourceGroupName = resourceGroup.Name,
-            KubeEnvironmentId = kubeEnv.Id,
+            ManagedEnvironmentId = kubeEnv.Id,
             Configuration = new ConfigurationArgs
             {
                 ActiveRevisionsMode = ActiveRevisionsMode.Single,

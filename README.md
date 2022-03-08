@@ -41,6 +41,7 @@ pulumi login
 ```shell
 cd ca-pulumi-dotnet
 pulumi stack init dev
+pulumi config set azure-native:location westeurope
 pulumi up
 ```
 
@@ -63,23 +64,17 @@ pulumi up
 deploy sample
 
 ```shell
-cd app1
-dotnet publish
-cd ..
-cd app2
-dotnet publish
-cd ..
-cd ca-dotnet
+pulumi stack select dev
 pulumi up
 ```
 
 test sample
 
 ```shell
-pulumi stack select dev
 curl $(pulumi stack output urlapp2)/health
 curl $(pulumi stack output urlapp1)/health
-curl -v $(pulumi stack output urlapp1)/healthapp2
+curl -v $(pulumi stack output urlapp1)/health-remote
+curl -v $(pulumi stack output urlapp2)/health-remote
 ```
 
 > the first 2 test individual health endpoints, and the 3rd tests service invocation from app1 to app2

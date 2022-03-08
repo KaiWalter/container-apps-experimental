@@ -21,5 +21,6 @@ module pep 'resourceprivatelink.bicep' = {
     groupId: 'registry'
     dnsZone: 'privatelink.azurecr.io'
     vnetName: vnetName
+    location: location
   }
 }

@@ -15,8 +15,7 @@ resource kv 'Microsoft.KeyVault/vaults@2021-06-01-preview' = {
       bypass: 'None'
       defaultAction: 'Deny'
     }
-    accessPolicies:[
-    ]
+    accessPolicies: []
   }
 }
 
@@ -27,5 +26,6 @@ module pep 'resourceprivatelink.bicep' = {
     groupId: 'vault'
     dnsZone: 'privatelink.vaultcore.azure.net'
     vnetName: vnetName
+    location: location
   }
 }

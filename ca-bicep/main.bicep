@@ -8,6 +8,7 @@ module network 'network.bicep' = {
   name: 'container-app-network'
   params: {
     resourcePrefix: environmentName
+    location: location
   }
 }
 
@@ -16,6 +17,7 @@ module logging 'logging.bicep' = {
   params: {
     logAnalyticsWorkspaceName: 'logs-${environmentName}'
     appInsightsName: 'appins-${environmentName}'
+    location: location
   }
 }
 
@@ -41,6 +43,7 @@ module vmHub 'vm.bicep' = if (deployVm) {
     adminUsername: 'ca'
     adminPasswordOrKey: adminPasswordOrKey
     vmName: '${environmentName}-hub-jump-vm'
+    location: location
   }
 }
 
@@ -54,6 +57,7 @@ module vmSpoke 'vm.bicep' = if (deployVm) {
     adminUsername: 'ca'
     adminPasswordOrKey: adminPasswordOrKey
     vmName: '${environmentName}-spoke-jump-vm'
+    location: location
   }
 }
 
@@ -62,6 +66,7 @@ module cr 'cr.bicep' = {
   params: {
     containerRegistryName: replace('${environmentName}cr', '-', '')
     vnetName: network.outputs.vnetSpokeName
+    location: location
   }
 }
 
@@ -70,6 +75,7 @@ module stg 'storage.bicep' = {
   params: {
     storageAccountName: replace('${environmentName}privatestorage', '-', '')
     vnetName: network.outputs.vnetSpokeName
+    location: location
   }
 }
 
@@ -78,6 +84,7 @@ module kv 'keyvault.bicep' = {
   params: {
     keyVaultName: 'kv-${environmentName}'
     vnetName: network.outputs.vnetSpokeName
+    location: location
   }
 }
 
@@ -86,6 +93,7 @@ module sb 'servicebus.bicep' = {
   params: {
     namespaceName: 'sb-${environmentName}'
     vnetName: network.outputs.vnetSpokeName
+    location: location
   }
 }
 
@@ -94,7 +102,10 @@ module docdb 'docdb.bicep' = {
   params: {
     accountName: 'db-${environmentName}'
     vnetName: network.outputs.vnetSpokeName
+    location: location
   }
 }
 
-output env object = az.environment().suffixes
+output environment object = environment.outputs.environment
+output environmentStaticIp string = environment.outputs.environmentStaticIp
+output environmentDefaultDomain string = environment.outputs.environmentDefaultDomain
