@@ -45,8 +45,6 @@ SUBNET_HUB_JUMP_ID=`az network vnet show --ids $VNET_HUB_ID --query "subnets[?na
 
 echo $VNET_HUB_ID $SUBNET_HUB_JUMP_ID
 
-read -p "wait"
-
 az deployment group create --resource-group $RESOURCE_GROUP \
     --template-file privatelink.bicep \
     --parameters "{\"subnetSpokeId\": {\"value\": \"$SUBNET_SPOKE_JUMP_ID\"},\"subnetHubId\": {\"value\": \"$SUBNET_HUB_JUMP_ID\"},\"loadBalancerFipId\": {\"value\": \"$ILB_FIP_ID\"}}"
