@@ -11,10 +11,10 @@ namespace fapp2
 
         [FunctionName("QueueIngress")]
         public void Run(
-            [ServiceBusTrigger("%queuename%", Connection = "servicebusconnection")]string payload, ILogger log)
+            [ServiceBusTrigger("%queuename%", Connection = "servicebusconnection")] string payload, ILogger log)
         {
             log.LogInformation($"C# ServiceBus queue trigger function processed message: {payload}");
-            Thread.Sleep(100*rnd.Next(5,100));
+            Thread.Sleep(100 * rnd.Next(5, 100));
         }
     }
 }
