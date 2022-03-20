@@ -18,6 +18,8 @@ module environment 'environment.bicep' = {
     logAnalyticsCustomerId: logging.outputs.logAnalyticsCustomerId
     logAnalyticsSharedKey: logging.outputs.logAnalyticsSharedKey
     appInsightsInstrumentationKey: logging.outputs.appInsightsInstrumentationKey
+    storageAccountName: stg.outputs.name
+    storageContainerName: stg.outputs.containerName
   }
 }
 
@@ -40,7 +42,7 @@ module sb 'servicebus.bicep' = {
 module stg 'storage.bicep' = {
   name: 'stg'
   params: {
-    storageAccountName: replace('${environmentName}privatestorage', '-', '')
+    storageAccountName: replace(environmentName, '-', '')
     location: location
   }
 }

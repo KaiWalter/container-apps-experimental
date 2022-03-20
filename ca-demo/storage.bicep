@@ -1,4 +1,6 @@
 param storageAccountName string
+param storageContainerName string = 'state'
+
 param location string = resourceGroup().location
 
 resource stg 'Microsoft.Storage/storageAccounts@2021-06-01' = {
@@ -16,3 +18,16 @@ resource stg 'Microsoft.Storage/storageAccounts@2021-06-01' = {
     }
   }
 }
+
+resource bs 'Microsoft.Storage/storageAccounts/blobServices@2021-06-01' = {
+  name: 'default'
+  parent: stg
+}
+
+resource container 'Microsoft.Storage/storageAccounts/blobServices/containers@2021-06-01' = {
+  name: storageContainerName
+  parent: bs
+}
+
+output name string = stg.name
+output containerName string = container.name
