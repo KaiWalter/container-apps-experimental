@@ -11,7 +11,7 @@
             "type": "string"
         },
         "location": {
-            "defaultValue": "northeurope",
+            "defaultValue": "westeurope",
             "type": "string"
         },
         "environmentName": {

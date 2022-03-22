@@ -31,3 +31,4 @@ resource container 'Microsoft.Storage/storageAccounts/blobServices/containers@20
 
 output name string = stg.name
 output containerName string = container.name
+output key string = stg.listKeys().keys[0].value

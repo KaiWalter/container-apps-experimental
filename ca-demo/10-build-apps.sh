@@ -9,6 +9,7 @@ SUBSCRIPTION=`az account show --query id -o tsv`
 ACRNAME=$(az acr list -g $RESOURCE_GROUP --query [0].name -o tsv)
 ACRLOGINSERVER=$(az acr show -n $ACRNAME -g $RESOURCE_GROUP --query loginServer -o tsv)
 ACRPASSWORD=$(az acr credential show -n $ACRNAME -g $RESOURCE_GROUP --query passwords[0].value -o tsv)
+REDISNAME=$(az redis list -g $RESOURCE_GROUP --query [0].name -o tsv)
 
 declare -a apps=("app1" "app2")
 timestamp=$(date +%s)
@@ -33,6 +34,7 @@ do
         registry=$ACRLOGINSERVER \
         registryUsername=$ACRNAME \
         registryPassword="$ACRPASSWORD" \
+        redisName=$REDISNAME \
         useExternalIngress=true
 
 done

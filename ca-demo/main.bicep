@@ -10,6 +10,14 @@ module logging 'logging.bicep' = {
   }
 }
 
+module redis 'redis.bicep' = {
+  name: 'container-app-redis'
+  params: {
+    redisName: 'rds-${environmentName}'
+    location: location
+  }
+}
+
 module environment 'environment.bicep' = {
   name: 'container-app-environment'
   params: {
@@ -18,8 +26,11 @@ module environment 'environment.bicep' = {
     logAnalyticsCustomerId: logging.outputs.logAnalyticsCustomerId
     logAnalyticsSharedKey: logging.outputs.logAnalyticsSharedKey
     appInsightsInstrumentationKey: logging.outputs.appInsightsInstrumentationKey
-    storageAccountName: stg.outputs.name
-    storageContainerName: stg.outputs.containerName
+    // redisHost: redis.outputs.redisHost
+    // redisPassword: redis.outputs.redisPassword
+    // storageAccountName: stg.outputs.name
+    // storageContainerName: stg.outputs.containerName
+    // storageAccountKey: stg.outputs.key
   }
 }
 
@@ -31,18 +42,18 @@ module cr 'cr.bicep' = {
   }
 }
 
-module sb 'servicebus.bicep' = {
-  name: 'sb'
-  params: {
-    namespaceName: 'sb-${environmentName}'
-    location: location
-  }
-}
+// module sb 'servicebus.bicep' = {
+//   name: 'sb'
+//   params: {
+//     namespaceName: 'sb-${environmentName}'
+//     location: location
+//   }
+// }
 
-module stg 'storage.bicep' = {
-  name: 'stg'
-  params: {
-    storageAccountName: replace(environmentName, '-', '')
-    location: location
-  }
-}
+// module stg 'storage.bicep' = {
+//   name: 'stg'
+//   params: {
+//     storageAccountName: replace(environmentName, '-', '')
+//     location: location
+//   }
+// }

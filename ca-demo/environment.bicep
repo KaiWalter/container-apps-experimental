@@ -3,8 +3,11 @@ param location string = resourceGroup().location
 param logAnalyticsCustomerId string
 param logAnalyticsSharedKey string
 param appInsightsInstrumentationKey string
-param storageAccountName string
-param storageContainerName string
+// param storageAccountName string
+// param storageContainerName string
+// param storageAccountKey string
+// param redisHost string
+// param redisPassword string
 
 resource environment 'Microsoft.App/managedEnvironments@2022-01-01-preview' = {
   name: environmentName
@@ -27,6 +30,14 @@ resource environment 'Microsoft.App/managedEnvironments@2022-01-01-preview' = {
 //   properties: {
 //     componentType: 'state.azure.blobstorage'
 //     version: 'v1'
+//     ignoreErrors: false
+//     initTimeout: '60s'
+//     secrets:[
+//       {
+//         name: 'storage-key'
+//         value: storageAccountKey
+//       }
+//     ]
 //     metadata: [
 //       {
 //         name: 'accountName'
@@ -40,6 +51,10 @@ resource environment 'Microsoft.App/managedEnvironments@2022-01-01-preview' = {
 //         name: 'containerName'
 //         value: storageContainerName
 //       }
+//     ]
+//     scopes:[
+//       'app1'
+//       'app2'
 //     ]
 //   }
 // }
