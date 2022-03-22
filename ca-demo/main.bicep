@@ -6,7 +6,7 @@ module logging 'logging.bicep' = {
   params: {
     logAnalyticsWorkspaceName: 'logs-${environmentName}'
     appInsightsName: 'appins-${environmentName}'
-    location: location
+    location: location == 'centraluseuap' ? 'centralus' : location
   }
 }
 
@@ -38,7 +38,7 @@ module cr 'cr.bicep' = {
   name: 'cr'
   params: {
     containerRegistryName: replace('${environmentName}cr', '-', '')
-    location: location
+    location: location == 'centraluseuap' ? 'centralus' : location
   }
 }
 

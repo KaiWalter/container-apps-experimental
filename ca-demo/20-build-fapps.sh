@@ -3,7 +3,7 @@
 set -e
 
 RESOURCE_GROUP="ca-kw"
-LOCATION="westeurope"
+LOCATION="centraluseuap"
 ENVIRONMENTNAME="ca-kw"
 SUBSCRIPTION=`az account show --query id -o tsv`
 ACRNAME=$(az acr list -g $RESOURCE_GROUP --query [0].name -o tsv)

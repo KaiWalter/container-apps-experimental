@@ -1,7 +1,7 @@
 #!/bin/bash
 
 RESOURCE_GROUP="ca-kw"
-LOCATION="westeurope"
+LOCATION="centraluseuap"
 ENVIRONMENTNAME="ca-kw"
 SUBSCRIPTION=`az account show --query id -o tsv`
 
