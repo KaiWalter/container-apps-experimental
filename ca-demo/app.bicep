@@ -19,42 +19,12 @@ param redisName string
 
 param envVars array = []
 
-resource redisCache 'Microsoft.Cache/Redis@2019-07-01' existing = {
-  name: redisName
-}
-
-resource jscalcfrontendrediscomponent 'Microsoft.App/managedEnvironments/daprComponents@2022-01-01-preview' = {
-  name: 'redis'
-  parent: environment
-  properties: {
-    componentType: 'state.redis'
-    version: 'v1'
-    ignoreErrors: false
-    initTimeout: '60s'
-    secrets: [
-      {
-        name: 'redis-key'
-        value: redisCache.listKeys().primaryKey
-      }
-    ]
-    metadata: [
-      {
-        name: 'redisHost'
-        value: '${redisCache.properties.hostName}:6379'
-      }
-      {
-        name: 'redisPassword'
-        secretRef: 'redis-key'
-      }
-    ]
-    scopes: [
-      name
-    ]
-  }
-}
-
 resource environment 'Microsoft.App/managedEnvironments@2022-01-01-preview' existing = {
   name: environmentName
+}
+
+resource redisCache 'Microsoft.Cache/Redis@2019-07-01' existing = {
+  name: redisName
 }
 
 resource containerApp 'Microsoft.App/containerApps@2022-01-01-preview' = {
@@ -67,10 +37,6 @@ resource containerApp 'Microsoft.App/containerApps@2022-01-01-preview' = {
         {
           name: 'container-registry-password'
           value: registryPassword
-        }
-        {
-          name: 'redis-key'
-          value: redisCache.listKeys().primaryKey
         }
       ]
       registries: [
@@ -99,6 +65,20 @@ resource containerApp 'Microsoft.App/containerApps@2022-01-01-preview' = {
           env: envVars
         }
       ]
+      scale: {
+        minReplicas: 1
+        maxReplicas: 10
+        rules: [
+          {
+            name: 'http-rule'
+            http: {
+              metadata: {
+                concurrentRequests: '5'
+              }
+            }
+          }
+        ]
+      }
     }
   }
 }

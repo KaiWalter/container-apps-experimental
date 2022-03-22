@@ -34,7 +34,7 @@ resource environment 'Microsoft.App/managedEnvironments@2022-01-01-preview' exis
 // https://gist.github.com/gbaeke/1e9ad7a62cb6a3347e081fad6dcca4d2
 var scalingRules = {
   Queue: {
-    minReplicas: 0
+    minReplicas: 1
     maxReplicas: 10
     rules: [
       {
@@ -56,7 +56,7 @@ var scalingRules = {
     ]
   }
   Http: {
-    minReplicas: 0
+    minReplicas: 1
     maxReplicas: 10
     rules: [
       {

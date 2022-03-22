@@ -18,6 +18,14 @@ module redis 'redis.bicep' = {
   }
 }
 
+module sb 'servicebus.bicep' = {
+  name: 'sb'
+  params: {
+    namespaceName: 'sb-${environmentName}'
+    location: location
+  }
+}
+
 module environment 'environment.bicep' = {
   name: 'container-app-environment'
   params: {
@@ -26,11 +34,16 @@ module environment 'environment.bicep' = {
     logAnalyticsCustomerId: logging.outputs.logAnalyticsCustomerId
     logAnalyticsSharedKey: logging.outputs.logAnalyticsSharedKey
     appInsightsInstrumentationKey: logging.outputs.appInsightsInstrumentationKey
-    // redisHost: redis.outputs.redisHost
-    // redisPassword: redis.outputs.redisPassword
-    // storageAccountName: stg.outputs.name
-    // storageContainerName: stg.outputs.containerName
-    // storageAccountKey: stg.outputs.key
+    redisName: redis.outputs.redisName
+    namespaceName: sb.outputs.namespaceName
+  }
+}
+
+module stg 'storage.bicep' = {
+  name: 'stg'
+  params: {
+    storageAccountName: replace(environmentName, '-', '')
+    location: location
   }
 }
 
@@ -41,19 +54,3 @@ module cr 'cr.bicep' = {
     location: location == 'centraluseuap' ? 'centralus' : location
   }
 }
-
-// module sb 'servicebus.bicep' = {
-//   name: 'sb'
-//   params: {
-//     namespaceName: 'sb-${environmentName}'
-//     location: location
-//   }
-// }
-
-// module stg 'storage.bicep' = {
-//   name: 'stg'
-//   params: {
-//     storageAccountName: replace(environmentName, '-', '')
-//     location: location
-//   }
-// }

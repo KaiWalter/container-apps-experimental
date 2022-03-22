@@ -1,8 +1,8 @@
+using Dapr.Client;
+using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Net.Http;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Dapr.Client;
 
 namespace app2.Controllers
 {
