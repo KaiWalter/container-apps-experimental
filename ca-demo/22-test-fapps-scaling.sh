@@ -8,5 +8,6 @@ ENVIRONMENTNAME="ca-kw"
 SUBSCRIPTION=`az account show --query id -o tsv`
 
 fqdn=`az rest --method get -u /subscriptions/$SUBSCRIPTION/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.App/containerApps/fapp1?api-version=2022-01-01-preview --query properties.configuration.ingress.fqdn -o tsv`
-echo "testing with address https://$fqdn/api/httpingress"
+echo "address for load testing resource (parameter ingress_url): $fqdn"
+read -p "start local test loop"
 for i in {{1..500}}; do echo $i; curl -X POST -d 'TEST' https://$fqdn/api/httpingress; done

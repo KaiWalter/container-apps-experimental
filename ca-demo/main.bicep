@@ -1,12 +1,16 @@
 param environmentName string = 'env-${resourceGroup().name}'
 param location string = resourceGroup().location
+param principalId string
+
+var alternateLocation = location == 'centraluseuap' ? 'centralus' : location
+var alternateLocationLoadTesting = location == 'centraluseuap' ? 'southcentralus' : location
 
 module logging 'logging.bicep' = {
   name: 'container-app-logging'
   params: {
     logAnalyticsWorkspaceName: 'logs-${environmentName}'
     appInsightsName: 'appins-${environmentName}'
-    location: location == 'centraluseuap' ? 'centralus' : location
+    location: alternateLocation
   }
 }
 
@@ -51,6 +55,15 @@ module cr 'cr.bicep' = {
   name: 'cr'
   params: {
     containerRegistryName: replace('${environmentName}cr', '-', '')
-    location: location == 'centraluseuap' ? 'centralus' : location
+    location: alternateLocation
+  }
+}
+
+module lt 'loadtesting.bicep' = {
+  name: 'lt'
+  params: {
+    loadTestingName: 'lt-${environmentName}'
+    principalId: principalId
+    location: alternateLocationLoadTesting
   }
 }
