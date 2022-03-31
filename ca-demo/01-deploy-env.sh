@@ -3,7 +3,7 @@
 set -e
 
 RESOURCE_GROUP="ca-kw"
-LOCATION="centraluseuap"
+LOCATION="westeurope"
 ENVIRONMENTNAME="ca-kw"
 PRINCIPALID=`az ad user list --filter "mail eq '$(az account show --query user.name -o tsv)'" --query [].objectId -o tsv`
 

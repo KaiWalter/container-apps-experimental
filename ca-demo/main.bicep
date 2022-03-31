@@ -3,7 +3,7 @@ param location string = resourceGroup().location
 param principalId string
 
 var alternateLocation = location == 'centraluseuap' ? 'centralus' : location
-var alternateLocationLoadTesting = location == 'centraluseuap' ? 'southcentralus' : location
+var alternateLocationLoadTesting = location == 'centraluseuap' ? 'southcentralus' : location == 'westeurope' ? 'northeurope' : location
 
 module logging 'logging.bicep' = {
   name: 'container-app-logging'
