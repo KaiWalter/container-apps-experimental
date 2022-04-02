@@ -25,7 +25,6 @@ resource environment 'Microsoft.App/managedEnvironments@2022-01-01-preview' exis
 
 resource containerApp 'Microsoft.App/containerApps@2022-01-01-preview' = {
   name: name
-  kind: 'containerapp'
   location: location
   properties: {
     managedEnvironmentId: environment.id
@@ -47,6 +46,12 @@ resource containerApp 'Microsoft.App/containerApps@2022-01-01-preview' = {
         external: useExternalIngress
         targetPort: containerPort
       }
+      dapr: {
+        enabled: true
+        appId: name
+        appPort: containerPort
+        appProtocol: 'http'
+      }
     }
     template: {
       containers: [
@@ -56,14 +61,6 @@ resource containerApp 'Microsoft.App/containerApps@2022-01-01-preview' = {
           env: envVars
         }
       ]
-      dapr: {
-        enabled: true
-        appId: name
-        appPort: containerPort
-        appProtocol: 'http'
-      }
     }
   }
 }
-
-output fqdn string = containerApp.properties.configuration.ingress.fqdn

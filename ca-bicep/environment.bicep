@@ -26,7 +26,3 @@ resource environment 'Microsoft.App/managedEnvironments@2022-01-01-preview' = {
     }
   }
 }
-
-output environment object = environment.properties
-output environmentStaticIp string = environment.properties.staticIp
-output environmentDefaultDomain string = environment.properties.defaultDomain

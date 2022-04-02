@@ -19,7 +19,9 @@ STACCOUNT=`az storage account list -g $RESOURCE_GROUP --query [0].id -o tsv`
 STCONN=`az storage account show-connection-string --ids $STACCOUNT --query connectionString -o tsv`
 
 mkdir -p /tmp/deployment
-rm /tmp/deployment/*
+if [ -e /tmp/deployment/* ]; then
+    rm /tmp/deployment/*
+fi
 
 cat <<EOF >/tmp/deployment/env.json
 [
@@ -91,8 +93,7 @@ done
 
 for app in "${apps[@]}"
 do
-    fqdn=`az rest --method get -u /subscriptions/$SUBSCRIPTION/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.App/containerApps/$app?api-version=2022-01-01-preview --query properties.configuration.ingress.fqdn -o tsv`
-    # fqdn=`az containerapp show -n $app -g $RESOURCE_GROUP --query configuration.ingress.fqdn -o tsv --only-show-errors`
+    fqdn=`az containerapp show -n $app -g $RESOURCE_GROUP --query properties.configuration.ingress.fqdn -o tsv --only-show-errors`
     echo https://$fqdn/api/health
 done
 

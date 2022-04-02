@@ -39,7 +39,7 @@ done
 
 for app in "${apps[@]}"
 do
-    fqdn=`az rest --method get -u /subscriptions/$SUBSCRIPTION/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.App/containerApps/$app?api-version=2022-01-01-preview --query properties.configuration.ingress.fqdn -o tsv`
+    fqdn=`az containerapp show -n $app -g $RESOURCE_GROUP --query properties.configuration.ingress.fqdn -o tsv --only-show-errors`
     echo https://$fqdn/health
     echo https://$fqdn/health-remote
 done

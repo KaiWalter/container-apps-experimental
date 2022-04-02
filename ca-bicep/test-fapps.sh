@@ -14,8 +14,8 @@ declare -a apps=("fapp1" "fapp2")
 for app in "${apps[@]}"
 do
     echo "$app"
-    fqdn=`az rest --method get -u /subscriptions/$SUBSCRIPTION/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.App/containerApps/$app?api-version=2022-01-01-preview --query properties.configuration.ingress.fqdn -o tsv`
-    # fqdn=$(az containerapp show -n $app -g $RESOURCE_GROUP --query configuration.ingress.fqdn -o tsv --only-show-errors)
+    # fqdn=`az rest --method get -u /subscriptions/$SUBSCRIPTION/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.App/containerApps/$app?api-version=2022-01-01-preview --query properties.configuration.ingress.fqdn -o tsv`
+    fqdn=$(az containerapp show -n $app -g $RESOURCE_GROUP --query properties.configuration.ingress.fqdn -o tsv --only-show-errors)
     ssh ca@$IP curl -s https://$fqdn/api/health
     echo " <<-- check APIM internal status"
     ssh ca@$IP curl -s https://$fqdn/api/apim-status

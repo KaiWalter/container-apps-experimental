@@ -48,4 +48,4 @@ az containerapp create \
     --dapr-components /tmp/components/state.yaml \
     --target-port 80 \
     --ingress 'external' \
-    --query configuration.ingress.fqdn
+    --query properties.configuration.ingress.fqdn

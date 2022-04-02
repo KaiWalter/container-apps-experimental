@@ -16,16 +16,14 @@ else
     SSHPUBKEY=
 fi
 
-DEPLOYMENT=`az deployment group create --resource-group $RESOURCE_GROUP \
+az deployment group create --resource-group $RESOURCE_GROUP \
     --template-file main.bicep \
     --parameters environmentName=$ENVIRONMENTNAME \
     adminPasswordOrKey="$SSHPUBKEY" \
-    --query properties.outputs`
+    --query properties.outputs
 
-echo $DEPLOYMENT
-
-ENVIRONMENT_STATIC_IP=`echo $DEPLOYMENT | jq .environmentStaticIp.value -r`
-ENVIRONMENT_DEFAULT_DOMAIN=`echo $DEPLOYMENT | jq .environmentDefaultDomain.value -r`
+ENVIRONMENT_STATIC_IP=`az containerapp env show -n $ENVIRONMENTNAME -g $RESOURCE_GROUP --only-show-errors --query properties.staticIp -o tsv`
+ENVIRONMENT_DEFAULT_DOMAIN=`az containerapp env show -n $ENVIRONMENTNAME -g $RESOURCE_GROUP --only-show-errors --query properties.defaultDomain -o tsv`
 ENVIRONMENT_CODE=`echo $ENVIRONMENT_DEFAULT_DOMAIN | grep -oP "^[a-z0-9\-]{1,25}"`
 
 echo $ENVIRONMENT_STATIC_IP $ENVIRONMENT_DEFAULT_DOMAIN $ENVIRONMENT_CODE

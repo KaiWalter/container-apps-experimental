@@ -105,7 +105,3 @@ module docdb 'docdb.bicep' = {
     location: location
   }
 }
-
-output environment object = environment.outputs.environment
-output environmentStaticIp string = environment.outputs.environmentStaticIp
-output environmentDefaultDomain string = environment.outputs.environmentDefaultDomain
