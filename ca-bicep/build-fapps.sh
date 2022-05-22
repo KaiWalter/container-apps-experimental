@@ -55,13 +55,14 @@ EOF
 
 for app in "${apps[@]}"
 do
-    echo "$app"
+    echo "deploy $app to $ENVIRONMENTNAME"
 
     if [ "$1" == "skipbuild" ]; then
         timestamp=`az acr repository show-tags -n $ACRNAME --repository $app --top 1 --orderby time_desc -o tsv`
     else
         az acr build -t $ACRLOGINSERVER/$app:$timestamp -r $ACRNAME ../$app
     fi
+    echo "image $ACRLOGINSERVER/$app:$timestamp"
 
     if [ $app = 'fapp1' ]; then
         scaleby=Http
@@ -96,4 +97,3 @@ do
     fqdn=`az containerapp show -n $app -g $RESOURCE_GROUP --query properties.configuration.ingress.fqdn -o tsv --only-show-errors`
     echo https://$fqdn/api/health
 done
-

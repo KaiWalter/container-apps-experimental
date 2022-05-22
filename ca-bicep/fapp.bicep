@@ -73,8 +73,10 @@ var scalingRules = {
 
 resource containerApp 'Microsoft.App/containerApps@2022-01-01-preview' = {
   name: name
-  kind: 'containerapp'
   location: location
+  identity:{
+    type: 'SystemAssigned'
+  }
   properties: {
     managedEnvironmentId: environment.id
     configuration: {

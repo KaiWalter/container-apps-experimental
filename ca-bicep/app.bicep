@@ -26,6 +26,9 @@ resource environment 'Microsoft.App/managedEnvironments@2022-01-01-preview' exis
 resource containerApp 'Microsoft.App/containerApps@2022-01-01-preview' = {
   name: name
   location: location
+  identity:{
+    type: 'SystemAssigned'
+  }
   properties: {
     managedEnvironmentId: environment.id
     configuration: {
