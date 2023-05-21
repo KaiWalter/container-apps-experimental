@@ -33,4 +33,4 @@ resource environment 'Microsoft.App/managedEnvironments@2022-10-01' = {
 }
 
 output defaultDomain string = environment.properties.defaultDomain
-output staticIp string = environment.properties.staticIp
+
